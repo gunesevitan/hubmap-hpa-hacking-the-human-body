@@ -1,0 +1,34 @@
+{
+  "hpa": {
+    "pixel_size": {
+      "kidney": 0.4,
+      "prostate": 0.4,
+      "largeintestine": 0.4,
+      "spleen": 0.4,
+      "lung": 0.4
+    },
+    "tissue_thickness": {
+      "kidney": 4,
+      "prostate": 4,
+      "largeintestine": 4,
+      "spleen": 4,
+      "lung": 4
+    }
+  },
+  "hubmap": {
+    "pixel_size": {
+      "kidney": 0.5,
+      "prostate": 6.263,
+      "largeintestine": 0.229,
+      "spleen": 0.4945,
+      "lung": 0.7562
+    },
+    "tissue_thickness": {
+      "kidney": 10,
+      "prostate": 5,
+      "largeintestine": 8,
+      "spleen": 4,
+      "lung": 5
+    }
+  }
+}

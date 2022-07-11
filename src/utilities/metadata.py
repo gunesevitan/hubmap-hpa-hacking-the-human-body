@@ -2,6 +2,7 @@ import logging
 import sys
 from tqdm import tqdm
 from glob import glob
+import json
 import numpy as np
 import pandas as pd
 import tifffile
@@ -46,3 +47,41 @@ if __name__ == '__main__':
     df_train.to_csv(settings.DATA / 'train_metadata.csv', index=False)
     logging.info(f'Saved train_metadata.csv to {settings.DATA}')
     logging.info(f'Training Set Shape: {df_train.shape} - Memory Usage: {df_train.memory_usage().sum() / 1024 ** 2:.2f} MB')
+
+    imaging_measurements = {
+        'hpa': {
+            'pixel_size': {
+                'kidney': 0.4,
+                'prostate': 0.4,
+                'largeintestine': 0.4,
+                'spleen': 0.4,
+                'lung': 0.4
+            },
+            'tissue_thickness': {
+                'kidney': 4,
+                'prostate': 4,
+                'largeintestine': 4,
+                'spleen': 4,
+                'lung': 4
+            }
+        },
+        'hubmap': {
+            'pixel_size': {
+                'kidney': 0.5,
+                'prostate': 6.263,
+                'largeintestine': 0.2290,
+                'spleen': 0.4945,
+                'lung': 0.7562
+            },
+            'tissue_thickness': {
+                'kidney': 10,
+                'prostate': 5,
+                'largeintestine': 8,
+                'spleen': 4,
+                'lung': 5
+            }
+        }
+    }
+    with open(settings.DATA / 'imaging_measurements.json', mode='w') as f:
+        json.dump(imaging_measurements, f, indent=2, ensure_ascii=False)
+    logging.info(f'Saved imaging_measurements.json.csv to {settings.DATA}')

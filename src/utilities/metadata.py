@@ -5,6 +5,7 @@ from glob import glob
 import numpy as np
 import pandas as pd
 import cv2
+import tifffile
 
 sys.path.append('..')
 import settings
@@ -22,7 +23,7 @@ if __name__ == '__main__':
 
         # Extract metadata from image
         image_id = int(image_filename.split('/')[-1].split('.')[0])
-        image = cv2.imread(image_filename, -1)
+        image = tifffile.imread(image_filename)
 
         df_train.loc[df_train['id'] == image_id, 'image_r_mean'] = np.mean(image[:, :, 0])
         df_train.loc[df_train['id'] == image_id, 'image_r_std'] = np.std(image[:, :, 0])

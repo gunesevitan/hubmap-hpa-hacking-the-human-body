@@ -4,7 +4,6 @@ from tqdm import tqdm
 from glob import glob
 import numpy as np
 import pandas as pd
-import cv2
 import tifffile
 
 sys.path.append('..')

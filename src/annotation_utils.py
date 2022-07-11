@@ -61,7 +61,7 @@ def get_segmentation_mask_from_df(df, image_id):
 
     Parameters
     ----------
-    df (pandas.DataFrame of shape (n_rows, n_columns)): DataFrame with id, rle, img_height and img_width columns
+    df (pandas.DataFrame of shape (n_rows, n_columns)): Dataframe with id, rle, img_height and img_width columns
     image_id (str): ID of the image
 
     Returns

@@ -21,7 +21,7 @@ def get_semantic_segmentation_transforms(**transform_parameters):
         A.Resize(
             height=transform_parameters['resize_height'],
             width=transform_parameters['resize_width'],
-            interpolation=cv2.INTER_LANCZOS4,
+            interpolation=cv2.INTER_NEAREST,
             always_apply=True
         ),
         A.HorizontalFlip(p=transform_parameters['horizontal_flip_probability']),
@@ -39,7 +39,7 @@ def get_semantic_segmentation_transforms(**transform_parameters):
         A.Resize(
             height=transform_parameters['resize_height'],
             width=transform_parameters['resize_width'],
-            interpolation=cv2.INTER_LANCZOS4,
+            interpolation=cv2.INTER_NEAREST,
             always_apply=True
         ),
         A.Normalize(

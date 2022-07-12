@@ -43,7 +43,9 @@ if __name__ == '__main__':
             image_id=image_id
         )
         df_train.loc[df_train['id'] == image_id, 'n_polygons'] = len(polygons)
+
         df_train.loc[df_train['id'] == image_id, 'image_filename'] = image_filename
+        df_train.loc[df_train['id'] == image_id, 'polygon_filename'] = settings.DATA / 'train_annotations' / f'{image_id}.json'
 
     df_train.to_csv(settings.DATA / 'train_metadata.csv', index=False)
     logging.info(f'Saved train_metadata.csv to {settings.DATA}')

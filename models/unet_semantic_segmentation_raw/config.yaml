@@ -1,4 +1,4 @@
-task: semantic_segmentation_2d
+task: semantic_segmentation
 
 dataset_parameters:
   input_directory: train_images

@@ -1,0 +1,6 @@
+data/
+venv/
+.idea/
+*.pyc
+*.pt
+*.pth

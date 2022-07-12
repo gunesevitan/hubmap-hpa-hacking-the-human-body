@@ -31,7 +31,7 @@ class SemanticSegmentationDataset(Dataset):
         Returns
         -------
         image (torch.FloatTensor of shape (3, height, width)): Image tensor
-        mask (torch.FloatTensor of shape (3, height, width)): Target tensor
+        mask (torch.FloatTensor of shape (1, height, width)): Mask tensor
         """
 
         image = tifffile.imread(str(self.image_paths[idx]))

@@ -111,6 +111,92 @@ def visualize_annotations(image, rle_mask, polygons, metadata, path=None):
         plt.close(fig)
 
 
+def visualize_learning_curve(training_losses, validation_losses, path=None):
+
+    """
+    Visualize learning curves of the models
+
+    Parameters
+    ----------
+    training_losses (array-like of shape (n_epochs or n_steps)): Array of training losses computed after every epoch or step
+    validation_losses (array-like of shape (n_epochs or n_steps)): Array of validation losses computed after every epoch or step
+    path (str or None): Path of the output file (if path is None, plot is displayed with selected backend)
+    """
+
+    fig, ax = plt.subplots(figsize=(32, 8), dpi=100)
+    sns.lineplot(
+        x=np.arange(1, len(training_losses) + 1),
+        y=training_losses,
+        ax=ax,
+        label='train_loss'
+    )
+    if validation_losses is not None:
+        sns.lineplot(
+            x=np.arange(1, len(validation_losses) + 1),
+            y=validation_losses,
+            ax=ax,
+            label='val_loss'
+        )
+    ax.set_xlabel('Epochs/Steps', size=15, labelpad=12.5)
+    ax.set_ylabel('Loss', size=15, labelpad=12.5)
+    ax.tick_params(axis='x', labelsize=12.5, pad=10)
+    ax.tick_params(axis='y', labelsize=12.5, pad=10)
+    ax.legend(prop={'size': 18})
+    ax.set_title('Learning Curve', size=20, pad=15)
+
+    if path is None:
+        plt.show()
+    else:
+        plt.savefig(path)
+        plt.close(fig)
+
+
+def visualize_scores(df_scores, path=None):
+
+    """
+    Visualize metric scores of multiple models with error bars
+
+    Parameters
+    ----------
+    df_scores (pandas.DataFrame of shape (n_folds, 6)): DataFrame of metric scores
+    path (str or None): Path of the output file (if path is None, plot is displayed with selected backend)
+    """
+
+    # Create mean and std of scores for error bars
+    df_scores = df_scores.T
+    column_names = df_scores.columns.to_list()
+    df_scores['mean'] = df_scores[column_names].mean(axis=1)
+    df_scores['std'] = df_scores[column_names].std(axis=1)
+
+    fig, ax = plt.subplots(figsize=(24, 8))
+    ax.barh(
+        y=np.arange(df_scores.shape[0]),
+        width=df_scores['mean'],
+        xerr=df_scores['std'],
+        align='center',
+        ecolor='black',
+        capsize=10
+    )
+    ax.set_yticks(np.arange(df_scores.shape[0]))
+    ax.set_yticklabels([
+        f'{metric}\n{mean:.4f} (±{std:.4f})' for metric, mean, std in zip(
+            df_scores.index,
+            df_scores['mean'].values,
+            df_scores['std'].values
+        )
+    ])
+    ax.set_xlabel('')
+    ax.tick_params(axis='x', labelsize=15, pad=10)
+    ax.tick_params(axis='y', labelsize=15, pad=10)
+    ax.set_title('Metric Scores', size=20, pad=15)
+
+    if path is None:
+        plt.show()
+    else:
+        plt.savefig(path)
+        plt.close(fig)
+
+
 if __name__ == '__main__':
 
     df_train = pd.read_csv(settings.DATA / 'train_metadata.csv')

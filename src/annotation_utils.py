@@ -1,6 +1,6 @@
 import json
 import numpy as np
-from PIL import Image, ImageDraw
+import cv2
 
 import settings
 
@@ -120,15 +120,13 @@ def polygon_to_mask(polygons, shape):
     segmentation_mask (numpy.ndarray of shape (height, width)): 2d segmentation mask
     """
 
-    segmentation_mask = Image.new('L', (shape[1], shape[0]), 0)
+    segmentation_mask = np.zeros(shape)
 
     for polygon in polygons:
         # Convert list of points to tuple pairs of X and Y coordinates
         points = np.array(polygon).reshape(-1, 2)
-        points = [(point[0], point[1]) for point in points]
-
         # Draw mask from the polygon
-        ImageDraw.Draw(segmentation_mask).polygon(points, outline=1, fill=1)
+        cv2.fillPoly(segmentation_mask, [points], 1, lineType=cv2.LINE_8, shift=0)
 
     segmentation_mask = np.array(segmentation_mask).astype(np.uint8)
 

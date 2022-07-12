@@ -65,6 +65,9 @@ transform_parameters:
   normalize_std: [0.15422885530869604, 0.19460989079464583, 0.16390648194643512]
   normalize_max_pixel_value: 255
 
+post_processing_parameters:
+  rounding_threshold: 0.5
+
 persistence_parameters:
   name: unet_semantic_segmentation_raw
   save_models: True

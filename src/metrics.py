@@ -121,3 +121,57 @@ def binary_intersection_over_union(ground_truth, predictions, threshold=0.5, eps
         raise ValueError('Invalid shape')
 
     return float(intersection_over_union)
+
+
+def mean_binary_dice_coefficient(ground_truth, predictions, thresholds=(0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7), eps=0.00001):
+
+    """
+    Calculate dice coefficients on given ground truth and predictions arrays using different thresholds and average them
+
+    Parameters
+    ----------
+    ground_truth (array-like of shape (batch_size, height, width) or (height, width)): Ground truth array
+    predictions (array-like of shape (batch_size, height, width) or (height, width)): Predictions array
+    thresholds (tuple of shape (n_thresholds)): Thresholds for converting soft predictions into hard labels (0 <= threshold <= 1)
+    eps (float): A small number for avoiding division by zero
+
+    Returns
+    -------
+    dice_coefficients (list of shape (n_thresholds)): Calculated dice coefficients using given thresholds
+    mean_dice_coefficient (float): Average of calculated dice coefficients
+    """
+
+    dice_coefficients = []
+    for threshold in thresholds:
+        dice_coefficients.append(binary_dice_coefficient(ground_truth=ground_truth, predictions=predictions, threshold=threshold, eps=eps))
+
+    mean_dice_coefficient = float(np.mean(dice_coefficients))
+
+    return dice_coefficients, mean_dice_coefficient
+
+
+def mean_binary_intersection_over_union(ground_truth, predictions, thresholds=(0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7), eps=0.00001):
+
+    """
+    Calculate intersection over unions on given ground truth and predictions arrays using different thresholds and average them
+
+    Parameters
+    ----------
+    ground_truth (array-like of shape (batch_size, height, width) or (height, width)): Ground truth array
+    predictions (array-like of shape (batch_size, height, width) or (height, width)): Predictions array
+    thresholds (tuple of shape (n_thresholds)): Thresholds for converting soft predictions into hard labels (0 <= threshold <= 1)
+    eps (float): A small number for avoiding division by zero
+
+    Returns
+    -------
+    intersection_over_unions (list of shape (n_thresholds)): Calculated intersection over unions using given thresholds
+    mean_intersection_over_union (float): Average of calculated intersection over unions
+    """
+
+    intersection_over_unions = []
+    for threshold in thresholds:
+        intersection_over_unions.append(binary_intersection_over_union(ground_truth=ground_truth, predictions=predictions, threshold=threshold, eps=eps))
+
+    mean_intersection_over_union = float(np.mean(intersection_over_unions))
+
+    return intersection_over_unions, mean_intersection_over_union

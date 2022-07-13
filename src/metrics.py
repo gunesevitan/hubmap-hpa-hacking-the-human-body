@@ -137,15 +137,15 @@ def mean_binary_dice_coefficient(ground_truth, predictions, thresholds=(0.3, 0.3
 
     Returns
     -------
-    dice_coefficients (list of shape (n_thresholds)): Calculated dice coefficients using given thresholds
+    dice_coefficients (dict): Calculated dice coefficients using given thresholds
     mean_dice_coefficient (float): Average of calculated dice coefficients
     """
 
-    dice_coefficients = []
+    dice_coefficients = {}
     for threshold in thresholds:
-        dice_coefficients.append(binary_dice_coefficient(ground_truth=ground_truth, predictions=predictions, threshold=threshold, eps=eps))
+        dice_coefficients[threshold] = binary_dice_coefficient(ground_truth=ground_truth, predictions=predictions, threshold=threshold, eps=eps)
 
-    mean_dice_coefficient = float(np.mean(dice_coefficients))
+    mean_dice_coefficient = float(np.mean(list(dice_coefficients.values())))
 
     return dice_coefficients, mean_dice_coefficient
 
@@ -164,14 +164,14 @@ def mean_binary_intersection_over_union(ground_truth, predictions, thresholds=(0
 
     Returns
     -------
-    intersection_over_unions (list of shape (n_thresholds)): Calculated intersection over unions using given thresholds
+    intersection_over_unions (dict): Calculated intersection over unions using given thresholds
     mean_intersection_over_union (float): Average of calculated intersection over unions
     """
 
-    intersection_over_unions = []
+    intersection_over_unions = {}
     for threshold in thresholds:
-        intersection_over_unions.append(binary_intersection_over_union(ground_truth=ground_truth, predictions=predictions, threshold=threshold, eps=eps))
+        intersection_over_unions[threshold] = binary_intersection_over_union(ground_truth=ground_truth, predictions=predictions, threshold=threshold, eps=eps)
 
-    mean_intersection_over_union = float(np.mean(intersection_over_unions))
+    mean_intersection_over_union = float(np.mean(list(intersection_over_unions.values())))
 
     return intersection_over_unions, mean_intersection_over_union

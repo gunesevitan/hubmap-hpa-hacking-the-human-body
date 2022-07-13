@@ -40,7 +40,7 @@ def extract_spatial_properties(mask):
 def evaluate_predictions(ground_truth, predictions, threshold):
 
     """
-    Evaluate predictions by comparing them with ground-truth
+    Evaluate predictions and ground-truth if it is given
 
     Parameters
     ----------
@@ -53,18 +53,20 @@ def evaluate_predictions(ground_truth, predictions, threshold):
     evaluation_summary (dict): Dictionary of evaluation summary
     """
 
-    dice_coefficient = metrics.binary_dice_coefficient(ground_truth=ground_truth, predictions=predictions, threshold=threshold)
-    intersection_over_union = metrics.binary_intersection_over_union(ground_truth=ground_truth, predictions=predictions, threshold=threshold)
+    if ground_truth is not None:
+        scores = {
+            'dice_coefficient': metrics.binary_dice_coefficient(ground_truth=ground_truth, predictions=predictions, threshold=threshold),
+            'intersection_over_union': metrics.binary_intersection_over_union(ground_truth=ground_truth, predictions=predictions, threshold=threshold)
+        }
+    else:
+        scores = None
 
     evaluation_summary = {
-        'scores': {
-            'dice_coefficient': dice_coefficient,
-            'intersection_over_union': intersection_over_union
-        },
+        'scores': scores,
         'statistics':  {
             'ground_truth': {
-                'mean': float(np.mean(ground_truth)),
-                'sum': int(np.sum(ground_truth))
+                'mean': float(np.mean(ground_truth)) if ground_truth is not None else None,
+                'sum': int(np.sum(ground_truth)) if ground_truth is not None else None
             },
             'predictions': {
                 'mean': float(np.mean(predictions)),
@@ -72,7 +74,7 @@ def evaluate_predictions(ground_truth, predictions, threshold):
             }
         },
         'spatial_properties': {
-            'ground_truth': extract_spatial_properties(ground_truth),
+            'ground_truth': extract_spatial_properties(ground_truth) if ground_truth is not None else None,
             'predictions': extract_spatial_properties(predictions)
         }
     }

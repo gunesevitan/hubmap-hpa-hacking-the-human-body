@@ -37,7 +37,7 @@ def extract_spatial_properties(mask):
     return spatial_properties
 
 
-def evaluate_predictions(ground_truth, predictions, threshold):
+def evaluate_predictions(ground_truth, predictions, thresholds=(0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7)):
 
     """
     Evaluate predictions and ground-truth if it is given
@@ -46,7 +46,7 @@ def evaluate_predictions(ground_truth, predictions, threshold):
     ----------
     ground_truth (array-like of shape (height, width)): Ground truth array
     predictions (array-like of shape (height, width)): Predictions array
-    threshold (float): Threshold for converting soft predictions into hard labels (0 <= threshold <= 1)
+    thresholds (tuple of shape (n_thresholds)): Thresholds for converting soft predictions into hard labels (0 <= threshold <= 1)
 
     Returns
     -------
@@ -54,9 +54,13 @@ def evaluate_predictions(ground_truth, predictions, threshold):
     """
 
     if ground_truth is not None:
+        dice_coefficients = metrics.mean_binary_dice_coefficient(ground_truth=ground_truth, predictions=predictions, thresholds=thresholds)
+        intersection_over_unions = metrics.mean_binary_intersection_over_union(ground_truth=ground_truth, predictions=predictions, thresholds=thresholds)
         scores = {
-            'dice_coefficient': metrics.binary_dice_coefficient(ground_truth=ground_truth, predictions=predictions, threshold=threshold),
-            'intersection_over_union': metrics.binary_intersection_over_union(ground_truth=ground_truth, predictions=predictions, threshold=threshold)
+            'dice_coefficients': dice_coefficients[0],
+            'mean_dice_coefficient': dice_coefficients[1],
+            'intersection_over_unions': intersection_over_unions[0],
+            'mean_intersection_over_union': intersection_over_unions[1],
         }
     else:
         scores = None

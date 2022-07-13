@@ -36,7 +36,7 @@ def binary_dice_coefficient(ground_truth, predictions, threshold=0.5, eps=0.0000
     ----------
     ground_truth (array-like of shape (batch_size, height, width) or (height, width)): Ground truth array
     predictions (array-like of shape (batch_size, height, width) or (height, width)): Predictions array
-    rounding_threshold (float): Threshold for converting soft predictions into hard labels (0 <= threshold <= 1)
+    threshold (float): Threshold for converting soft predictions into hard labels (0 <= threshold <= 1)
     eps (float): A small number for avoiding division by zero
 
     Returns
@@ -84,7 +84,7 @@ def binary_intersection_over_union(ground_truth, predictions, threshold=0.5, eps
     ----------
     ground_truth (array-like of shape (batch_size, height, width) or (height, width)): Ground truth array
     predictions (array-like of shape (batch_size, height, width) or (height, width)): Predictions array
-    rounding_threshold (float): Threshold for converting soft predictions into hard labels (0 <= threshold <= 1)
+    threshold (float): Threshold for converting soft predictions into hard labels (0 <= threshold <= 1)
     eps (float): A small number for avoiding division by zero
 
     Returns

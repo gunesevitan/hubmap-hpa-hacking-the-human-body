@@ -1,6 +1,29 @@
+import numpy as np
 import cv2
 import albumentations as A
 from albumentations.pytorch.transforms import ToTensorV2
+from albumentations import ImageOnlyTransform
+
+
+class Scale(ImageOnlyTransform):
+
+    def apply(self, image, **kwargs):
+
+        """
+        Scale pixel values between 0 and 1
+
+        Parameters
+        ----------
+        image (numpy.ndarray of shape (height, width)): Image array
+
+        Returns
+        -------
+        image (numpy.ndarray of shape (height, width)): Image array divided by max 8 bit integer
+        """
+
+        image = np.float32(image) / 255.
+
+        return image
 
 
 def get_semantic_segmentation_transforms(**transform_parameters):

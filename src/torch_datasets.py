@@ -47,7 +47,7 @@ class SemanticSegmentationDataset(Dataset):
                     polygons = json.load(f)
                 mask = annotation_utils.polygon_to_mask(polygons=polygons, shape=image.shape[:2])
             else:
-                raise ValueError('Incorrect mask format')
+                raise ValueError('Invalid mask format')
 
             if self.transforms is not None:
                 # Apply transforms to image and semantic segmentation mask

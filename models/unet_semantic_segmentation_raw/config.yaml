@@ -21,7 +21,7 @@ model_parameters:
   model_checkpoint_path: null
 
 training_parameters:
-  folds: [fold1]#, fold2, fold3, fold4, fold5]
+  folds: [fold1, fold2, fold3, fold4, fold5]
   loss_function: WeightedSegmentationLoss
   loss_args:
     distribution_based_loss_function: SoftBCEWithLogitsLoss

@@ -79,7 +79,7 @@ def evaluate_predictions(ground_truth, predictions, thresholds=(0.3, 0.35, 0.4, 
         },
         'spatial_properties': {
             'ground_truth': extract_spatial_properties(ground_truth) if ground_truth is not None else None,
-            'predictions': extract_spatial_properties(np.uint8(predictions >= 0.5))
+            'predictions': extract_spatial_properties(np.uint8(predictions >= np.median(thresholds)))
         }
     }
 

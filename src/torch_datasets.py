@@ -57,11 +57,12 @@ class SemanticSegmentationDataset(Dataset):
                 mask = torch.unsqueeze(mask, dim=0)
 
             else:
-                # Scale pixel values by max 8 bit pixel value
-                image = np.float32(image) / 255.
                 image = torch.as_tensor(image, dtype=torch.float)
                 mask = torch.as_tensor(mask, dtype=torch.float)
                 mask = torch.unsqueeze(mask, dim=0)
+
+            # Scale pixel values by max 8 bit pixel value
+            image /= 255.
 
             return image, mask
 
@@ -72,8 +73,9 @@ class SemanticSegmentationDataset(Dataset):
                 transformed = self.transforms(image=image)
                 image = transformed['image'].float()
             else:
-                # Scale pixel values by max 8 bit pixel value
-                image = np.float32(image) / 255.
                 image = torch.as_tensor(image, dtype=torch.float)
+
+            # Scale pixel values by max 8 bit pixel value
+            image /= 255.
 
             return image

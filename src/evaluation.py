@@ -98,3 +98,50 @@ def evaluate_predictions(ground_truth, predictions, threshold, thresholds=(0.3, 
     }
 
     return evaluation_summary
+
+
+def evaluate_scores(df):
+
+    """
+    Evaluate calculated metric scores
+
+    Parameters
+    ----------
+    df (pandas.DataFrame of shape (n_rows, n_columns)): Dataframe with id, organ, folds and metric scores columns
+
+    Returns
+    -------
+    evaluation_summary (dict): Dictionary of evaluation summary
+    """
+
+    # Drop samples without dice coefficient and intersection over union values
+    df = df.loc[df['dice_coefficient'].notnull() & df['intersection_over_union'].notnull()]
+
+    evaluation_summary = {
+        'folds': {
+            'global': {
+                'sample_count': {fold: df.loc[df[fold] == 1].shape[0] for fold in ['fold1']},
+                'dice_coefficient': {fold: df.loc[df[fold] == 1, 'dice_coefficient'].agg(['mean', 'std', 'min', 'max']).to_dict() for fold in ['fold1']},
+                'intersection_over_union': {fold: df.loc[df[fold] == 1, 'intersection_over_union'].agg(['mean', 'std', 'min', 'max']).to_dict() for fold in ['fold1']},
+            },
+            'organs': {
+                'sample_count': {fold: df.loc[df[fold] == 1].groupby('organ')['organ'].count().to_dict() for fold in ['fold1']},
+                'dice_coefficient': {fold: df.loc[df[fold] == 1].groupby('organ')['dice_coefficient'].agg(['mean', 'std', 'min', 'max']).T.to_dict() for fold in ['fold1']},
+                'intersection_over_union': {fold: df.loc[df[fold] == 1].groupby('organ')['intersection_over_union'].agg(['mean', 'std', 'min', 'max']).T.to_dict() for fold in ['fold1']}
+            },
+        },
+        'out_of_fold': {
+            'global': {
+                'sample_count': df.shape[0],
+                'dice_coefficient': df['dice_coefficient'].agg(['mean', 'std', 'min', 'max']).to_dict(),
+                'intersection_over_union': df['intersection_over_union'].agg(['mean', 'std', 'min', 'max']).to_dict()
+            },
+            'organs': {
+                'sample_count': df.groupby('organ')['organ'].count().to_dict(),
+                'dice_coefficient': df.groupby('organ')['dice_coefficient'].agg(['mean', 'std', 'min', 'max']).T.to_dict(),
+                'intersection_over_union': df.groupby('organ')['intersection_over_union'].agg(['mean', 'std', 'min', 'max']).T.to_dict()
+            },
+        }
+    }
+
+    return evaluation_summary

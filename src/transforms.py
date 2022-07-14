@@ -49,6 +49,7 @@ def get_semantic_segmentation_transforms(**transform_parameters):
         ),
         A.HorizontalFlip(p=transform_parameters['horizontal_flip_probability']),
         A.VerticalFlip(p=transform_parameters['vertical_flip_probability']),
+        A.RandomRotate90(p=transform_parameters['random_rotate_90_probability']),
         A.Normalize(
             mean=transform_parameters['normalize_mean'],
             std=transform_parameters['normalize_std'],

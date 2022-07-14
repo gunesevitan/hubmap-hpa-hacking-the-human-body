@@ -65,8 +65,15 @@ transform_parameters:
   normalize_std: [0.15422885530869604, 0.19460989079464583, 0.16390648194643512]
   normalize_max_pixel_value: 255
 
-post_processing_parameters:
-  rounding_threshold: 0.5
+inference_parameters:
+  folds: [fold1, fold2, fold3, fold4, fold5]
+  label_threshold_range: [0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7]
+  label_thresholds:
+    kidney: 0.5
+    prostate: 0.5
+    largeintestine: 0.5
+    spleen: 0.5
+    lung: 0.5
 
 persistence_parameters:
   name: unet_semantic_segmentation_raw

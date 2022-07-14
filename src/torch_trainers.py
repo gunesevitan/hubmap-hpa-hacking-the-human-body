@@ -109,8 +109,8 @@ class SemanticSegmentationTrainer:
                 predictions += [(outputs.detach().cpu())]
 
         val_loss = np.mean(losses)
-        ground_truth = torch.cat(ground_truth, dim=0)
-        predictions = torch.sigmoid(torch.cat(predictions, dim=0))
+        ground_truth = torch.squeeze(torch.cat(ground_truth, dim=0), dim=1)
+        predictions = torch.sigmoid(torch.squeeze(torch.cat(predictions, dim=0), dim=1))
         val_dice_coefficients = metrics.mean_binary_dice_coefficient(ground_truth=ground_truth, predictions=predictions, thresholds=self.inference_parameters['label_threshold_range'])
         val_intersection_over_unions = metrics.mean_binary_intersection_over_union(ground_truth=ground_truth, predictions=predictions, thresholds=self.inference_parameters['label_threshold_range'])
 

@@ -24,7 +24,7 @@ if __name__ == '__main__':
             model_parameters=config['model_parameters'],
             training_parameters=config['training_parameters'],
             transform_parameters=config['transform_parameters'],
-            post_processing_parameters=config['post_processing_parameters'],
+            inference_parameters=config['inference_parameters'],
             persistence_parameters=config['persistence_parameters']
         )
 

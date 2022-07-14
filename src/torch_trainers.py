@@ -2,30 +2,34 @@ import logging
 from pathlib import Path
 import json
 import pandas as pd
+import tifffile
 from tqdm import tqdm
 import numpy as np
+import cv2
 import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 import torch.optim as optim
 
 import settings
+import annotation_utils
 import visualization
 import transforms
 import torch_datasets
 import torch_modules
 import torch_utils
-import torch_metrics
+import metrics
+import evaluation
 
 
 class SemanticSegmentationTrainer:
 
-    def __init__(self, dataset_parameters, model_parameters, training_parameters, transform_parameters, post_processing_parameters, persistence_parameters):
+    def __init__(self, dataset_parameters, model_parameters, training_parameters, transform_parameters, inference_parameters, persistence_parameters):
 
         self.dataset_parameters = dataset_parameters
         self.model_parameters = model_parameters
         self.training_parameters = training_parameters
         self.transform_parameters = transform_parameters
-        self.post_processing_parameters = post_processing_parameters
+        self.inference_parameters = inference_parameters
         self.persistence_parameters = persistence_parameters
 
     def train(self, train_loader, model, criterion, optimizer, device, scheduler=None):
@@ -83,8 +87,8 @@ class SemanticSegmentationTrainer:
         Returns
         -------
         val_loss (float): Average validation loss after model is fully validated on validation set data loader
-        val_dice_coefficient (float): Validation dice coefficient after model is fully validated on validation set data loader
-        val_iou (float): Validation intersection over union after model is fully validated on validation set data loader
+        val_dice_coefficients (tuple and float): Validation dice coefficients after model is fully validated on validation set data loader
+        val_intersection_over_unions (tuple and float): Validation intersection over unions after model is fully validated on validation set data loader
         """
 
         model.eval()
@@ -107,10 +111,10 @@ class SemanticSegmentationTrainer:
         val_loss = np.mean(losses)
         ground_truth = torch.cat(ground_truth, dim=0)
         predictions = torch.sigmoid(torch.cat(predictions, dim=0))
-        val_dice_coefficient = torch_metrics.dice_coefficient(ground_truth=ground_truth, predictions=predictions, rounding_threshold=0.5)
-        val_iou = torch_metrics.intersection_over_union(ground_truth=ground_truth, predictions=predictions, rounding_threshold=0.5)
+        val_dice_coefficients = metrics.mean_binary_dice_coefficient(ground_truth=ground_truth, predictions=predictions, thresholds=self.inference_parameters['label_threshold_range'])
+        val_intersection_over_unions = metrics.mean_binary_intersection_over_union(ground_truth=ground_truth, predictions=predictions, thresholds=self.inference_parameters['label_threshold_range'])
 
-        return val_loss, val_dice_coefficient, val_iou
+        return val_loss, val_dice_coefficients, val_intersection_over_unions
 
     def train_and_validate(self, df_train):
 
@@ -129,7 +133,6 @@ class SemanticSegmentationTrainer:
         model_directory.mkdir(parents=True, exist_ok=True)
 
         dataset_transforms = transforms.get_semantic_segmentation_transforms(**self.transform_parameters)
-
         # Calculate and collect scores iteratively
         scores = []
 
@@ -184,7 +187,7 @@ class SemanticSegmentationTrainer:
                 'train_loss': [],
                 'val_loss': [],
                 'val_dice_coefficient': [],
-                'val_iou': []
+                'val_intersection_over_union': []
             }
 
             for epoch in range(1, self.training_parameters['epochs'] + 1):
@@ -195,14 +198,20 @@ class SemanticSegmentationTrainer:
                 if self.training_parameters['lr_scheduler'] == 'ReduceLROnPlateau':
                     # Step on validation loss if learning rate scheduler is ReduceLROnPlateau
                     train_loss = self.train(train_loader, model, criterion, optimizer, device, scheduler=None)
-                    val_loss, val_dice_coefficient, val_iou = self.validate(val_loader, model, criterion, device)
+                    val_loss, val_dice_coefficients, val_intersection_over_unions = self.validate(val_loader, model, criterion, device)
                     scheduler.step(val_loss)
                 else:
                     # Learning rate scheduler will work in validation function if it is not ReduceLROnPlateau
                     train_loss = self.train(train_loader, model, criterion, optimizer, device, scheduler)
-                    val_loss, val_dice_coefficient, val_iou = self.validate(val_loader, model, criterion, device)
+                    val_loss, val_dice_coefficients, val_intersection_over_unions = self.validate(val_loader, model, criterion, device)
 
-                logging.info(f'Epoch {epoch} - Training Loss: {train_loss:.4f} - Validation Loss: {val_loss:.4f} Dice Coefficient: {val_dice_coefficient:.4f} IoU: {val_iou:.4f}')
+                logging.info(
+                    f'''
+                    Epoch {epoch} - Training Loss: {train_loss:.4f} Validation Loss: {val_loss:.4f}
+                    Dice Coefficients: {val_dice_coefficients[0]} (Mean Dice Coefficient {val_dice_coefficients[1]:.4f})
+                    Intersection over Unions: {val_intersection_over_unions[0]} (Mean Intersection over Union {val_intersection_over_unions[1]:.4f})
+                    '''
+                )
                 best_val_loss = np.min(summary['val_loss']) if len(summary['val_loss']) > 0 else np.inf
                 if val_loss < best_val_loss:
                     # Save model if validation loss improves
@@ -212,19 +221,22 @@ class SemanticSegmentationTrainer:
 
                 summary['train_loss'].append(train_loss)
                 summary['val_loss'].append(val_loss)
-                summary['val_dice_coefficient'].append(val_dice_coefficient)
-                summary['val_iou'].append(val_iou)
+                summary['val_dice_coefficient'].append(np.median(list(val_dice_coefficients[0].values())))
+                summary['val_intersection_over_union'].append(np.median(list(val_intersection_over_unions[0].values())))
 
-                best_iteration = np.argmin(summary['val_loss'])
-                if len(summary['val_loss']) - best_iteration >= self.training_parameters['early_stopping_patience']:
-                    logging.info(f'Early stopping (validation loss didn\'t increase for {self.training_parameters["early_stopping_patience"]} epochs/steps)')
-                    logging.info(f'Best validation loss is {summary["val_loss"][best_iteration]:.6f}')
+                best_epoch = np.argmin(summary['val_loss'])
+                if len(summary['val_loss']) - best_epoch >= self.training_parameters['early_stopping_patience']:
+                    logging.info(
+                        f'''
+                        Early Stopping (validation loss didn\'t improve for {self.training_parameters["early_stopping_patience"]} epochs)
+                        Best Epoch ({best_epoch + 1}) Validation Loss: {summary["val_loss"][best_epoch]:.6f} Dice Coefficient: {summary["val_dice_coefficient"][best_epoch]:.4f}  Intersection over Union: {summary["val_intersection_over_union"][best_epoch]:.4f}
+                        '''
+                    )
                     early_stopping = True
-
                     scores.append({
-                        'val_loss': summary['val_loss'][best_iteration],
-                        'val_dice_coefficient': summary['val_dice_coefficient'][best_iteration],
-                        'val_iou': summary['val_iou'][best_iteration]
+                        'val_loss': summary['val_loss'][best_epoch],
+                        'val_dice_coefficient': summary['val_dice_coefficient'][best_epoch],
+                        'val_intersection_over_union': summary['val_intersection_over_union'][best_epoch]
                     })
 
             if self.persistence_parameters['save_visualizations']:
@@ -236,16 +248,16 @@ class SemanticSegmentationTrainer:
                 logging.info(f'Saved learning_curve_{fold}.png to {model_directory}')
 
         df_scores = pd.DataFrame(scores)
-        for idx, row in df_scores.iterrows():
-            logging.info(f'Fold {int(idx) + 1} - Validation Scores: {json.dumps(row.to_dict(), indent=2)}')
-        logging.info(f'\n{self.persistence_parameters["name"]} Mean Validation Scores: {json.dumps(df_scores.mean(axis=0).to_dict(), indent=2)} (±{json.dumps(df_scores.std(axis=0).to_dict(), indent=2)})')
+        for score_idx, row in df_scores.iterrows():
+            logging.info(f'Fold {int(score_idx) + 1} - Validation Scores: {json.dumps(row.to_dict(), indent=2)}')
+        logging.info(f'\n Mean Validation Scores: {json.dumps(df_scores.mean(axis=0).to_dict(), indent=2)} (±{json.dumps(df_scores.std(axis=0).to_dict(), indent=2)})')
 
         if self.persistence_parameters['save_visualizations']:
             visualization.visualize_scores(
                 df_scores=df_scores,
-                path=model_directory / f'scores.png'
+                path=model_directory / f'training_scores.png'
             )
-            logging.info(f'Saved scores.png to {model_directory}')
+            logging.info(f'Saved training_scores.png to {model_directory}')
 
     def inference(self, df_train):
 
@@ -265,10 +277,7 @@ class SemanticSegmentationTrainer:
 
         dataset_transforms = transforms.get_semantic_segmentation_transforms(**self.transform_parameters)
 
-        # Calculate and collect scores iteratively
-        scores = []
-
-        for fold_idx, fold in enumerate(self.training_parameters['folds']):
+        for fold in self.inference_parameters['folds']:
 
             val_idx = df_train.loc[df_train[fold] == 1].index
             logging.info(f'\n{fold}  - Validation {len(val_idx)} ({len(val_idx) // self.training_parameters["test_batch_size"] + 1} steps)')
@@ -295,36 +304,75 @@ class SemanticSegmentationTrainer:
             model.to(device)
 
             progress_bar = tqdm(val_loader)
-            ground_truth = []
             predictions = []
 
             with torch.no_grad():
-                for inputs, targets in progress_bar:
-                    inputs, targets = inputs.to(device), targets.to(device)
+                for inputs, _ in progress_bar:
+                    inputs = inputs.to(device)
                     outputs = model(inputs)
-                    ground_truth += [(targets.detach().cpu())]
                     predictions += [(outputs.detach().cpu())]
 
-            ground_truth = torch.cat(ground_truth, dim=0).long()
-            predictions = torch.sigmoid(torch.cat(predictions, dim=0))
+            del val_dataset, val_loader, model
 
-            val_dice_coefficient = torch_metrics.dice_coefficient(ground_truth, predictions, rounding_threshold=self.post_processing_parameters['rounding_threshold'])
-            val_iou = torch_metrics.intersection_over_union(ground_truth, predictions, rounding_threshold=self.post_processing_parameters['rounding_threshold'])
+            # Concatenate predictions tensor and remove channel dimension from it
+            # Apply sigmoid function to logits predictions and convert it numpy array
+            predictions = torch.sigmoid(torch.squeeze(torch.cat(predictions, dim=0), dim=1)).numpy().astype(np.float32)
 
-            scores.append({
-                'val_dice_coefficient': val_dice_coefficient,
-                'val_iou': val_iou
-            })
-            logging.info(f'{fold} - Validation Scores: {json.dumps(scores[fold_idx], indent=2)}')
+            # Create directory for predictions evaluation
+            predictions_evaluation_directory = Path(model_directory / 'predictions')
+            predictions_evaluation_directory.mkdir(parents=True, exist_ok=True)
 
-        df_scores = pd.DataFrame(scores)
-        for idx, row in df_scores.iterrows():
-            logging.info(f'Fold {int(idx) + 1} - Validation Scores: {json.dumps(row.to_dict(), indent=2)}')
-        logging.info(f'\n{self.persistence_parameters["name"]} Mean Validation Scores: {json.dumps(df_scores.mean(axis=0).to_dict(), indent=2)} (±{json.dumps(df_scores.std(axis=0).to_dict(), indent=2)})')
+            for idx, row in tqdm(df_train.loc[val_idx, :].reset_index(drop=True).iterrows(), total=len(val_idx)):
 
-        if self.persistence_parameters['save_visualizations']:
-            visualization.visualize_scores(
-                df_scores=df_scores,
-                path=model_directory / f'scores.png'
-            )
-            logging.info(f'Saved scores.png to {model_directory}')
+                image_id = row['id']
+                image = tifffile.imread(row['image_filename'])
+
+                if self.dataset_parameters['mask_format'] == 'rle':
+                    # Decode RLE mask string into 2d binary semantic segmentation mask array
+                    ground_truth_mask = annotation_utils.decode_rle_mask(
+                        rle_mask=row[self.dataset_parameters['target_directory']],
+                        shape=image.shape[:2]
+                    ).T
+                elif self.dataset_parameters['mask_format'] == 'polygon':
+                    # Read polygon JSON file and convert it into 2d binary semantic segmentation mask array
+                    with open(row[self.dataset_parameters['target_directory']], mode='r') as f:
+                        polygons = json.load(f)
+                    ground_truth_mask = annotation_utils.polygon_to_mask(polygons=polygons, shape=image.shape[:2])
+                else:
+                    raise ValueError('Invalid mask format')
+
+                # Resize predictions mask back to its original size and evaluate it
+                predictions_mask = cv2.resize(predictions[idx], (image.shape[1], image.shape[0]), interpolation=cv2.INTER_LANCZOS4)
+                predictions_evaluation_summary = evaluation.evaluate_predictions(
+                    ground_truth=ground_truth_mask,
+                    predictions=predictions_mask,
+                    threshold=self.inference_parameters['label_thresholds'][row['organ']],
+                    thresholds=self.inference_parameters['label_threshold_range'])
+
+                with open(predictions_evaluation_directory / f'{image_id}_evaluation.json', mode='w') as f:
+                    json.dump(predictions_evaluation_summary, f, indent=2)
+
+                df_train.loc[df_train['id'] == image_id, 'dice_coefficient'] = predictions_evaluation_summary['scores']['dice_coefficient']
+                df_train.loc[df_train['id'] == image_id, 'intersection_over_union'] = predictions_evaluation_summary['scores']['intersection_over_union']
+
+                predictions_mask = np.uint8(predictions_mask >= self.inference_parameters['label_thresholds'][row['organ']])
+
+                if self.persistence_parameters['save_visualizations']:
+                    visualization.visualize_predictions(
+                        image=image,
+                        ground_truth=ground_truth_mask,
+                        predictions=predictions_mask,
+                        metadata=row.to_dict(),
+                        evaluation_summary=predictions_evaluation_summary,
+                        path=predictions_evaluation_directory / f'{image_id}_predictions.png'
+
+                    )
+
+            logging.info(f'Saved predictions evaluation summaries and predictions visualizations to {predictions_evaluation_directory}')
+
+        scores_evaluation_summary = evaluation.evaluate_scores(df=df_train)
+        logging.info(json.dumps(scores_evaluation_summary, indent=2))
+        with open(model_directory / f'inference_scores.json', mode='w') as f:
+            json.dump(scores_evaluation_summary, f, indent=2)
+
+        logging.info(f'Saved scores evaluation summary to {model_directory}')

@@ -100,7 +100,7 @@ def evaluate_predictions(ground_truth, predictions, threshold, thresholds=(0.3, 
     return evaluation_summary
 
 
-def evaluate_scores(df):
+def evaluate_scores(df, folds):
 
     """
     Evaluate calculated metric scores
@@ -108,6 +108,7 @@ def evaluate_scores(df):
     Parameters
     ----------
     df (pandas.DataFrame of shape (n_rows, n_columns)): Dataframe with id, organ, folds and metric scores columns
+    folds (list of shape (n_folds)): List of fold column names
 
     Returns
     -------
@@ -120,14 +121,14 @@ def evaluate_scores(df):
     evaluation_summary = {
         'folds': {
             'global': {
-                'sample_count': {fold: df.loc[df[fold] == 1].shape[0] for fold in ['fold1']},
-                'dice_coefficient': {fold: df.loc[df[fold] == 1, 'dice_coefficient'].agg(['mean', 'std', 'min', 'max']).to_dict() for fold in ['fold1']},
-                'intersection_over_union': {fold: df.loc[df[fold] == 1, 'intersection_over_union'].agg(['mean', 'std', 'min', 'max']).to_dict() for fold in ['fold1']},
+                'sample_count': {fold: df.loc[df[fold] == 1].shape[0] for fold in folds},
+                'dice_coefficient': {fold: df.loc[df[fold] == 1, 'dice_coefficient'].agg(['mean', 'std', 'min', 'max']).to_dict() for fold in folds},
+                'intersection_over_union': {fold: df.loc[df[fold] == 1, 'intersection_over_union'].agg(['mean', 'std', 'min', 'max']).to_dict() for fold in folds},
             },
             'organs': {
-                'sample_count': {fold: df.loc[df[fold] == 1].groupby('organ')['organ'].count().to_dict() for fold in ['fold1']},
-                'dice_coefficient': {fold: df.loc[df[fold] == 1].groupby('organ')['dice_coefficient'].agg(['mean', 'std', 'min', 'max']).T.to_dict() for fold in ['fold1']},
-                'intersection_over_union': {fold: df.loc[df[fold] == 1].groupby('organ')['intersection_over_union'].agg(['mean', 'std', 'min', 'max']).T.to_dict() for fold in ['fold1']}
+                'sample_count': {fold: df.loc[df[fold] == 1].groupby('organ')['organ'].count().to_dict() for fold in folds},
+                'dice_coefficient': {fold: df.loc[df[fold] == 1].groupby('organ')['dice_coefficient'].agg(['mean', 'std', 'min', 'max']).T.to_dict() for fold in folds},
+                'intersection_over_union': {fold: df.loc[df[fold] == 1].groupby('organ')['intersection_over_union'].agg(['mean', 'std', 'min', 'max']).T.to_dict() for fold in folds}
             },
         },
         'out_of_fold': {

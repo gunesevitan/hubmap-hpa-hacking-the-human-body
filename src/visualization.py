@@ -59,6 +59,7 @@ def visualize_annotations(image, rle_mask, polygons, metadata, path=None):
     image (path-like str or numpy.ndarray of shape (height, width)): Image path relative to root/data or image array
     rle_mask (str): Run-length encoded segmentation mask string
     polygons (list of shape (n_polygons, n_points, 2)): Polygons
+    metadata (dict): Dictionary of metadata used in the visualization title
     path (path-like str or None): Path of the output file or None (if path is None, plot is displayed with selected backend)
     """
 
@@ -74,7 +75,7 @@ def visualize_annotations(image, rle_mask, polygons, metadata, path=None):
         # Raise TypeError if image argument is not an array-like object or a path-like string
         raise TypeError('Image is not an array or path.')
 
-    fig, axes = plt.subplots(figsize=(48, 16), ncols=3)
+    fig, axes = plt.subplots(figsize=(48, 20), ncols=3)
 
     axes[0].imshow(image)
     axes[1].imshow(image)
@@ -96,11 +97,78 @@ def visualize_annotations(image, rle_mask, polygons, metadata, path=None):
         axes[i].tick_params(axis='x', labelsize=15, pad=10)
         axes[i].tick_params(axis='y', labelsize=15, pad=10)
 
-    axes[0].set_title('Image', size=20, pad=15)
-    axes[1].set_title('Image + Mask and Polygons', size=20, pad=15)
-    axes[2].set_title('Mask and Polygons', size=20, pad=15)
+    axes[0].set_title('Image', size=25, pad=15)
+    axes[1].set_title('Image + Mask and Polygons', size=25, pad=15)
+    axes[2].set_title('Mask and Polygons', size=25, pad=15)
+
     fig.suptitle(
-        f'Image ID {metadata["id"]} - {row["organ"]} - {row["data_source"]} - {int(row["age"])} - {row["sex"]}\nImage Shape: {row["img_height"]}x{row["img_width"]} - Pixel Size: {row["pixel_size"]}µm - Tissue Thickness: {row["tissue_thickness"]}µm\n{int(row["n_polygons"])} Annotations',
+        f'''
+        Image ID {metadata["id"]} - {metadata["organ"]} - {metadata["data_source"]} - {int(metadata["age"])} - {metadata["sex"]}
+        Image Shape: {metadata["img_height"]}x{metadata["img_width"]} - Pixel Size: {metadata["pixel_size"]}µm - Tissue Thickness: {metadata["tissue_thickness"]}µm
+        {int(metadata["n_polygons"])} Annotations'
+        ''',
+        fontsize=30
+    )
+
+    if path is None:
+        plt.show()
+    else:
+        plt.savefig(path)
+        plt.close(fig)
+
+
+def visualize_predictions(image, ground_truth, predictions, metadata, evaluation_summary, path=None):
+
+    """
+    Visualize image along with its annotations and predictions
+
+    Parameters
+    ----------
+    image (numpy.ndarray of shape (height, width)): Image array
+    ground_truth (numpy.ndarray of shape (height, width)): Ground-truth mask array
+    predictions (numpy.ndarray of shape (height, width)): Predictions mask array
+    metadata (dict): Dictionary of metadata used in the visualization title
+    evaluation_summary (dict): Dictionary of evaluation summary used in the visualization title
+    path (path-like str or None): Path of the output file or None (if path is None, plot is displayed with selected backend)
+    """
+
+    if ground_truth is not None:
+        dice_coefficient = round(np.median(list(evaluation_summary['scores']['dice_coefficients'].values())), 4)
+        intersection_over_union = round(np.median(list(evaluation_summary['scores']['intersection_over_unions'].values())), 4)
+        ground_truth_evaluation = f'Mean: {evaluation_summary["statistics"]["ground_truth"]["mean"]:4f} - Sum: {evaluation_summary["statistics"]["ground_truth"]["sum"]} - Object Count: {evaluation_summary["spatial_properties"]["ground_truth"]["n_objects"]}'
+    else:
+        dice_coefficient = ''
+        intersection_over_union = ''
+        ground_truth_evaluation = ''
+
+    predictions_evaluation = f'Mean: {evaluation_summary["statistics"]["predictions"]["mean"]:4f} - Sum: {evaluation_summary["statistics"]["predictions"]["sum"]} - Object Count: {evaluation_summary["spatial_properties"]["predictions"]["n_objects"]}'
+
+    if isinstance(image, np.ndarray) is False:
+        # Raise TypeError if image argument is not an array-like object
+        raise TypeError('Image is not an array')
+
+    fig, axes = plt.subplots(figsize=(32, 20), ncols=2)
+
+    axes[0].imshow(image)
+    if ground_truth is not None:
+        axes[0].imshow(ground_truth, alpha=0.5)
+    axes[1].imshow(image)
+    axes[1].imshow(predictions, alpha=0.5)
+
+    for i in range(2):
+        axes[i].set_xlabel('')
+        axes[i].set_ylabel('')
+        axes[i].tick_params(axis='x', labelsize=15, pad=10)
+        axes[i].tick_params(axis='y', labelsize=15, pad=10)
+
+    axes[0].set_title('Image + Ground-truth\n' + ground_truth_evaluation, size=25, pad=15)
+    axes[1].set_title('Image + Predictions\n' + predictions_evaluation, size=25, pad=15)
+    fig.suptitle(
+        f'''
+        Image ID {metadata["id"]} - {metadata["organ"]} - {metadata["data_source"]} - {int(metadata["age"])} - {metadata["sex"]}
+        Image Shape: {metadata["img_height"]}x{metadata["img_width"]} - Pixel Size: {metadata["pixel_size"]}µm - Tissue Thickness: {metadata["tissue_thickness"]}µm
+        Dice Coefficient: {dice_coefficient} - Intersection over Union: {intersection_over_union}
+        ''',
         fontsize=30
     )
 

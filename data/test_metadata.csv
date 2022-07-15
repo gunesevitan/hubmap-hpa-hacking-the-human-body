@@ -1,2 +1,2 @@
 id,organ,data_source,img_height,img_width,pixel_size,tissue_thickness,image_r_mean,image_r_std,image_g_mean,image_g_std,image_b_mean,image_b_std,image_filename,age,sex
-10078,spleen,Hubmap,2023,2023,0.4945,4,174.68336986738518,45.87670205769344,99.42987697826943,54.09623999936711,133.5195279007186,49.81065020370986,,0,0
+10078,spleen,Hubmap,2023,2023,0.4945,4,174.68336986738518,45.87670205769344,99.42987697826943,54.09623999936711,133.5195279007186,49.81065020370986,/home/gunes/Desktop/Kaggle/hubmap-hpa-hacking-the-human-body/data/test_images/10078.tiff,0,0

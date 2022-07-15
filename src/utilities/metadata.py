@@ -67,7 +67,7 @@ if __name__ == '__main__':
         df_test.loc[df_test['id'] == image_id, 'image_b_mean'] = np.mean(image[:, :, 2])
         df_test.loc[df_test['id'] == image_id, 'image_b_std'] = np.std(image[:, :, 2])
 
-        df_test.loc[df_train['id'] == image_id, 'image_filename'] = image_filename
+        df_test.loc[df_test['id'] == image_id, 'image_filename'] = image_filename
 
     df_test['age'] = 0
     df_test['sex'] = 0

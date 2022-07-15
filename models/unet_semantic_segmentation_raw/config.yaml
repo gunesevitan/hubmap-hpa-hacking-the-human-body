@@ -8,9 +8,9 @@ dataset_parameters:
 model_parameters:
   model_class: Unet
   model_args:
-    encoder_name: timm-efficientnet-b0
+    encoder_name: efficientnet-b0
     encoder_depth: 5
-    encoder_weights: noisy-student
+    encoder_weights: imagenet
     decoder_use_batchnorm: True
     decoder_channels: [256, 128, 64, 32, 16]
     decoder_attention_type: null
@@ -21,7 +21,7 @@ model_parameters:
   model_checkpoint_path: null
 
 training_parameters:
-  folds: [fold1, fold2, fold3, fold4, fold5]
+  folds: [fold1]#, fold2, fold3, fold4, fold5]
   loss_function: WeightedSegmentationLoss
   loss_args:
     distribution_based_loss_function: SoftBCEWithLogitsLoss
@@ -42,10 +42,10 @@ training_parameters:
     lr: 0.001
     betas: [0.9, 0.999]
     weight_decay: 0.0
-  lr_scheduler: CosineAnnealingLR
+  lr_scheduler: StepLR
   lr_scheduler_args:
-    T_max: 200
-    eta_min: 0.00001
+    step_size: 200
+    gamma: 0.5
     last_epoch: -1
   epochs: 250
   early_stopping_patience: 10
@@ -61,7 +61,7 @@ transform_parameters:
   resize_width: 768
   horizontal_flip_probability: 0.5
   vertical_flip_probability: 0.5
-  random_rotate_90_probability: 0.2
+  random_rotate_90_probability: 0.25
   normalize_mean: [0.8461123334500709, 0.8181881670128927, 0.8396328177126106]
   normalize_std: [0.15422885530869604, 0.19460989079464583, 0.16390648194643512]
   normalize_max_pixel_value: 255

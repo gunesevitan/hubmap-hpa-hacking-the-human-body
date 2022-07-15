@@ -302,6 +302,7 @@ class SemanticSegmentationTrainer:
             model = torch_modules.SemanticSegmentationModel(self.model_parameters['model_class'], self.model_parameters['model_args'])
             model.load_state_dict(torch.load(model_directory / f'model_{fold}.pt'))
             model.to(device)
+            model.eval()
 
             progress_bar = tqdm(val_loader)
             predictions = []

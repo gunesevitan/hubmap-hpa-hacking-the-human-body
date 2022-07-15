@@ -116,24 +116,24 @@ class SemanticSegmentationTrainer:
 
         return val_loss, val_dice_coefficients, val_intersection_over_unions
 
-    def train_and_validate(self, df_train):
+    def train_and_validate(self, df_train, df_test):
 
         """
-        Train and validate on inputs and targets listed on given dataframe with specified configuration and transforms
+        Train and validate on inputs and targets listed on given dataframes with specified configuration and transforms
 
         Parameters
         ----------
         df_train (pandas.DataFrame of shape (n_rows, n_columns)): Dataframe of filenames, targets and folds
+        df_test (pandas.DataFrame of shape (n_rows, n_columns)): Dataframe of filenames
         """
 
         logging.info(f'\n{"-" * 30}\nRunning {self.persistence_parameters["name"]} Model for Training - Seed: {self.training_parameters["random_state"]}\n{"-" * 30}\n')
 
-        # Create directory for models, visualizations and predictions
-        model_directory = Path(settings.MODELS / self.persistence_parameters['name'])
-        model_directory.mkdir(parents=True, exist_ok=True)
+        # Create directory for models and visualizations
+        model_root_directory = Path(settings.MODELS / self.persistence_parameters['name'])
+        model_root_directory.mkdir(parents=True, exist_ok=True)
 
         dataset_transforms = transforms.get_semantic_segmentation_transforms(**self.transform_parameters)
-        # Calculate and collect scores iteratively
         scores = []
 
         for fold in self.training_parameters['folds']:
@@ -201,9 +201,60 @@ class SemanticSegmentationTrainer:
                     val_loss, val_dice_coefficients, val_intersection_over_unions = self.validate(val_loader, model, criterion, device)
                     scheduler.step(val_loss)
                 else:
-                    # Learning rate scheduler will work in validation function if it is not ReduceLROnPlateau
+                    # Learning rate scheduler works in validation function if it is not ReduceLROnPlateau
                     train_loss = self.train(train_loader, model, criterion, optimizer, device, scheduler)
                     val_loss, val_dice_coefficients, val_intersection_over_unions = self.validate(val_loader, model, criterion, device)
+
+                if self.persistence_parameters['visualize_epoch_predictions']:
+
+                    model.eval()
+
+                    # Create directory for epoch predictions visualizations
+                    epoch_predictions_directory = Path(model_root_directory / 'epoch_predictions')
+                    epoch_predictions_directory.mkdir(parents=True, exist_ok=True)
+
+                    # Sample single image for every organ type from training set with fixed random seed for evaluating epochs
+                    np.random.seed(self.training_parameters['random_state'])
+                    df_evaluation = pd.concat((
+                        df_train.groupby('organ').sample(1),
+                        df_test
+                    ), ignore_index=True, axis=0)
+
+                    for idx, row in df_evaluation.iterrows():
+
+                        evaluation_image = tifffile.imread(row['image_filename'])
+                        if row['data_source'] != 'Hubmap':
+                            evaluation_ground_truth_mask = annotation_utils.decode_rle_mask(rle_mask=row['rle'], shape=evaluation_image.shape[:2]).T
+                        else:
+                            evaluation_ground_truth_mask = None
+                        evaluation_inputs = dataset_transforms['val'](image=evaluation_image)['image'].float()
+                        evaluation_inputs = evaluation_inputs.to(device)
+
+                        with torch.no_grad():
+                            evaluation_outputs = model(torch.unsqueeze(evaluation_inputs, dim=0))
+
+                        evaluation_predictions_mask = torch.sigmoid(torch.squeeze(torch.squeeze(evaluation_outputs.detach().cpu(), dim=0), dim=0)).numpy().astype(np.float32)
+                        # Resize evaluation predictions mask back to its original size and evaluate it on multiple thresholds
+                        evaluation_predictions_mask = cv2.resize(evaluation_predictions_mask, (evaluation_image.shape[1], evaluation_image.shape[0]), interpolation=cv2.INTER_LANCZOS4)
+                        evaluation_summary = evaluation.evaluate_predictions(
+                            ground_truth=evaluation_ground_truth_mask,
+                            predictions=evaluation_predictions_mask,
+                            threshold=self.inference_parameters['label_thresholds'][row['organ']],
+                            thresholds=self.inference_parameters['label_threshold_range']
+                        )
+
+                        # Convert evaluation predictions mask's soft predictions to labels and visualize it
+                        evaluation_predictions_mask = metrics.soft_predictions_to_labels(x=evaluation_predictions_mask, threshold=self.inference_parameters['label_thresholds'][row['organ']])
+                        visualization.visualize_predictions(
+                            image=evaluation_image,
+                            ground_truth=evaluation_ground_truth_mask,
+                            predictions=evaluation_predictions_mask,
+                            metadata=row.to_dict(),
+                            evaluation_summary=evaluation_summary,
+                            path=epoch_predictions_directory / f'{row["id"]}_{row["organ"]}_{fold}_epoch{epoch}_predictions.png'
+                        )
+
+                    logging.info(f'Saved {fold} epoch {epoch} predictions to {epoch_predictions_directory}')
 
                 logging.info(
                     f'''
@@ -216,8 +267,8 @@ class SemanticSegmentationTrainer:
                 if val_loss < best_val_loss:
                     # Save model if validation loss improves
                     if self.persistence_parameters['save_models']:
-                        torch.save(model.state_dict(), model_directory / f'model_{fold}.pt')
-                        logging.info(f'Saved model_{fold}.pt to {model_directory} (validation loss decreased from {best_val_loss:.6f} to {val_loss:.6f})')
+                        torch.save(model.state_dict(), model_root_directory / f'model_{fold}.pt')
+                        logging.info(f'Saved model_{fold}.pt to {model_root_directory} (validation loss decreased from {best_val_loss:.6f} to {val_loss:.6f})')
 
                 summary['train_loss'].append(train_loss)
                 summary['val_loss'].append(val_loss)
@@ -239,30 +290,30 @@ class SemanticSegmentationTrainer:
                         'val_intersection_over_union': summary['val_intersection_over_union'][best_epoch]
                     })
 
-            if self.persistence_parameters['save_visualizations']:
+            if self.persistence_parameters['visualize_learning_curve']:
                 visualization.visualize_learning_curve(
                     training_losses=summary['train_loss'],
                     validation_losses=summary['val_loss'],
-                    path=model_directory / f'learning_curve_{fold}.png'
+                    path=model_root_directory / f'learning_curve_{fold}.png'
                 )
-                logging.info(f'Saved learning_curve_{fold}.png to {model_directory}')
+                logging.info(f'Saved learning_curve_{fold}.png to {model_root_directory}')
 
         df_scores = pd.DataFrame(scores)
         for score_idx, row in df_scores.iterrows():
             logging.info(f'Fold {int(score_idx) + 1} - Validation Scores: {json.dumps(row.to_dict(), indent=2)}')
-        logging.info(f'\n Mean Validation Scores: {json.dumps(df_scores.mean(axis=0).to_dict(), indent=2)} (±{json.dumps(df_scores.std(axis=0).to_dict(), indent=2)})')
+        logging.info(f'\nMean Validation Scores: {json.dumps(df_scores.mean(axis=0).to_dict(), indent=2)} (±{json.dumps(df_scores.std(axis=0).to_dict(), indent=2)})')
 
-        if self.persistence_parameters['save_visualizations']:
+        if self.persistence_parameters['visualize_training_scores']:
             visualization.visualize_scores(
                 df_scores=df_scores,
-                path=model_directory / f'training_scores.png'
+                path=model_root_directory / f'training_scores.png'
             )
-            logging.info(f'Saved training_scores.png to {model_directory}')
+            logging.info(f'Saved training_scores.png to {model_root_directory}')
 
     def inference(self, df_train):
 
         """
-        Inference on inputs and targets listed on given dataframe with specified configuration and transforms
+        Inference on inputs and targets listed on given dataframes with specified configuration and transforms
 
         Parameters
         ----------
@@ -271,9 +322,12 @@ class SemanticSegmentationTrainer:
 
         logging.info(f'\n{"-" * 30}\nRunning {self.persistence_parameters["name"]} Model for Inference - Seed: {self.training_parameters["random_state"]}\n{"-" * 30}\n')
 
-        # Create directory for models, visualizations and predictions
-        model_directory = Path(settings.MODELS / self.persistence_parameters['name'])
-        model_directory.mkdir(parents=True, exist_ok=True)
+        # Create directory for models and visualizations
+        model_root_directory = Path(settings.MODELS / self.persistence_parameters['name'])
+        model_root_directory.mkdir(parents=True, exist_ok=True)
+        # Create directory for final predictions visualizations
+        final_predictions_directory = Path(model_root_directory / 'final_predictions')
+        final_predictions_directory.mkdir(parents=True, exist_ok=True)
 
         dataset_transforms = transforms.get_semantic_segmentation_transforms(**self.transform_parameters)
 
@@ -283,9 +337,9 @@ class SemanticSegmentationTrainer:
             logging.info(f'\n{fold}  - Validation {len(val_idx)} ({len(val_idx) // self.training_parameters["test_batch_size"] + 1} steps)')
             val_dataset = torch_datasets.SemanticSegmentationDataset(
                 image_paths=df_train.loc[val_idx, 'image_filename'].values,
-                masks=df_train.loc[val_idx, self.dataset_parameters['target_directory']].values,
+                masks=None,
                 transforms=dataset_transforms['val'],
-                mask_format=self.dataset_parameters['mask_format']
+                mask_format=None
             )
             val_loader = DataLoader(
                 val_dataset,
@@ -300,28 +354,23 @@ class SemanticSegmentationTrainer:
             torch_utils.set_seed(self.training_parameters['random_state'], deterministic_cudnn=self.training_parameters['deterministic_cudnn'])
             device = torch.device(self.training_parameters['device'])
             model = torch_modules.SemanticSegmentationModel(self.model_parameters['model_class'], self.model_parameters['model_args'])
-            model.load_state_dict(torch.load(model_directory / f'model_{fold}.pt'))
+            model.load_state_dict(torch.load(model_root_directory / f'model_{fold}.pt'))
             model.to(device)
             model.eval()
 
-            progress_bar = tqdm(val_loader)
             predictions = []
 
-            with torch.no_grad():
-                for inputs, _ in progress_bar:
-                    inputs = inputs.to(device)
+            for inputs in tqdm(val_loader):
+                inputs = inputs.to(device)
+                with torch.no_grad():
                     outputs = model(inputs)
-                    predictions += [(outputs.detach().cpu())]
+                predictions += [(outputs.detach().cpu())]
 
             del val_dataset, val_loader, model
 
             # Concatenate predictions tensor and remove channel dimension from it
             # Apply sigmoid function to logits predictions and convert it numpy array
             predictions = torch.sigmoid(torch.squeeze(torch.cat(predictions, dim=0), dim=1)).numpy().astype(np.float32)
-
-            # Create directory for predictions evaluation
-            predictions_evaluation_directory = Path(model_directory / 'predictions')
-            predictions_evaluation_directory.mkdir(parents=True, exist_ok=True)
 
             for idx, row in tqdm(df_train.loc[val_idx, :].reset_index(drop=True).iterrows(), total=len(val_idx)):
 
@@ -350,30 +399,30 @@ class SemanticSegmentationTrainer:
                     threshold=self.inference_parameters['label_thresholds'][row['organ']],
                     thresholds=self.inference_parameters['label_threshold_range'])
 
-                with open(predictions_evaluation_directory / f'{image_id}_evaluation.json', mode='w') as f:
-                    json.dump(predictions_evaluation_summary, f, indent=2)
+                if self.persistence_parameters['evaluate_final_predictions']:
+                    with open(final_predictions_directory / f'{image_id}_evaluation.json', mode='w') as f:
+                        json.dump(predictions_evaluation_summary, f, indent=2)
 
                 df_train.loc[df_train['id'] == image_id, 'dice_coefficient'] = predictions_evaluation_summary['scores']['dice_coefficient']
                 df_train.loc[df_train['id'] == image_id, 'intersection_over_union'] = predictions_evaluation_summary['scores']['intersection_over_union']
 
                 predictions_mask = np.uint8(predictions_mask >= self.inference_parameters['label_thresholds'][row['organ']])
 
-                if self.persistence_parameters['save_visualizations']:
+                if self.persistence_parameters['visualize_final_predictions']:
                     visualization.visualize_predictions(
                         image=image,
                         ground_truth=ground_truth_mask,
                         predictions=predictions_mask,
                         metadata=row.to_dict(),
                         evaluation_summary=predictions_evaluation_summary,
-                        path=predictions_evaluation_directory / f'{image_id}_predictions.png'
-
+                        path=final_predictions_directory / f'{row["id"]}_{row["organ"]}_predictions.png'
                     )
 
-            logging.info(f'Saved predictions evaluation summaries and predictions visualizations to {predictions_evaluation_directory}')
+            logging.info(f'Saved predictions evaluation summaries and predictions visualizations to {final_predictions_directory}')
 
-        scores_evaluation_summary = evaluation.evaluate_scores(df=df_train)
+        scores_evaluation_summary = evaluation.evaluate_scores(df=df_train, folds=self.inference_parameters['folds'])
         logging.info(json.dumps(scores_evaluation_summary, indent=2))
-        with open(model_directory / f'inference_scores.json', mode='w') as f:
+        with open(model_root_directory / f'inference_scores.json', mode='w') as f:
             json.dump(scores_evaluation_summary, f, indent=2)
 
-        logging.info(f'Saved scores evaluation summary to {model_directory}')
+        logging.info(f'Saved inference_scores.json to {model_root_directory}')

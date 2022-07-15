@@ -16,6 +16,7 @@ if __name__ == '__main__':
     config = yaml.load(open(args.config_path, 'r'), Loader=yaml.FullLoader)
     df_train = pd.read_csv(settings.DATA / 'train_metadata.csv')
     df_train = df_train.merge(pd.read_csv(settings.DATA / 'folds.csv'), on='id', how='left')
+    df_test = pd.read_csv(settings.DATA / 'test_metadata.csv')
 
     if config['task'] == 'semantic_segmentation':
 
@@ -29,6 +30,6 @@ if __name__ == '__main__':
         )
 
     if args.mode == 'train':
-        trainer.train_and_validate(df_train=df_train)
+        trainer.train_and_validate(df_train=df_train, df_test=df_test)
     elif args.mode == 'inference':
         trainer.inference(df_train=df_train)

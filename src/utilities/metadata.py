@@ -15,11 +15,14 @@ import annotation_utils
 if __name__ == '__main__':
 
     df_train = pd.read_csv(settings.DATA / 'train.csv')
+    df_test = pd.read_csv(settings.DATA / 'test.csv')
     logging.info(f'Training Set Shape: {df_train.shape} - Memory Usage: {df_train.memory_usage().sum() / 1024 ** 2:.2f} MB')
+    logging.info(f'Test Set Shape: {df_test.shape} - Memory Usage: {df_test.memory_usage().sum() / 1024 ** 2:.2f} MB')
 
-    image_filenames = glob(str(settings.DATA / 'train_images' / '*.tiff'))
+    train_image_filenames = glob(str(settings.DATA / 'train_images' / '*.tiff'))
+    test_image_filenames = glob(str(settings.DATA / 'test_images' / '*.tiff'))
 
-    for image_filename in tqdm(image_filenames):
+    for image_filename in tqdm(train_image_filenames):
 
         # Extract metadata from image
         image_id = int(image_filename.split('/')[-1].split('.')[0])
@@ -50,6 +53,27 @@ if __name__ == '__main__':
     df_train.to_csv(settings.DATA / 'train_metadata.csv', index=False)
     logging.info(f'Saved train_metadata.csv to {settings.DATA}')
     logging.info(f'Training Set Shape: {df_train.shape} - Memory Usage: {df_train.memory_usage().sum() / 1024 ** 2:.2f} MB')
+
+    for image_filename in tqdm(test_image_filenames):
+
+        # Extract metadata from image
+        image_id = int(image_filename.split('/')[-1].split('.')[0])
+        image = tifffile.imread(image_filename)
+
+        df_test.loc[df_test['id'] == image_id, 'image_r_mean'] = np.mean(image[:, :, 0])
+        df_test.loc[df_test['id'] == image_id, 'image_r_std'] = np.std(image[:, :, 0])
+        df_test.loc[df_test['id'] == image_id, 'image_g_mean'] = np.mean(image[:, :, 1])
+        df_test.loc[df_test['id'] == image_id, 'image_g_std'] = np.std(image[:, :, 1])
+        df_test.loc[df_test['id'] == image_id, 'image_b_mean'] = np.mean(image[:, :, 2])
+        df_test.loc[df_test['id'] == image_id, 'image_b_std'] = np.std(image[:, :, 2])
+
+        df_test.loc[df_test['id'] == image_id, 'image_filename'] = image_filename
+
+    df_test['age'] = 0
+    df_test['sex'] = 0
+    df_test.to_csv(settings.DATA / 'test_metadata.csv', index=False)
+    logging.info(f'Saved test_metadata.csv to {settings.DATA}')
+    logging.info(f'Test Set Shape: {df_test.shape} - Memory Usage: {df_test.memory_usage().sum() / 1024 ** 2:.2f} MB')
 
     imaging_measurements = {
         'hpa': {

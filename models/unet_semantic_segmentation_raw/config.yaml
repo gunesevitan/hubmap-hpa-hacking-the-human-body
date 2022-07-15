@@ -67,7 +67,7 @@ transform_parameters:
   normalize_max_pixel_value: 255
 
 inference_parameters:
-  folds: [fold1, fold2, fold3, fold4, fold5]
+  folds: [fold1]#, fold2, fold3, fold4, fold5]
   label_threshold_range: [0.5]
   label_thresholds:
     kidney: 0.5
@@ -78,5 +78,9 @@ inference_parameters:
 
 persistence_parameters:
   name: unet_semantic_segmentation_raw
+  visualize_epoch_predictions: True
+  visualize_final_predictions: True
+  evaluate_final_predictions: True
+  visualize_learning_curve: True
+  visualize_training_scores: True
   save_models: True
-  save_visualizations: True

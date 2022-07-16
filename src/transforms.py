@@ -41,25 +41,17 @@ def get_semantic_segmentation_transforms(**transform_parameters):
     """
 
     train_transforms = A.Compose([
-        A.Resize(
+        A.RandomResizedCrop(
             height=transform_parameters['resize_height'],
             width=transform_parameters['resize_width'],
+            scale=transform_parameters['resize_scale'],
+            ratio=transform_parameters['resize_ratio'],
             interpolation=cv2.INTER_NEAREST,
             always_apply=True
         ),
         A.HorizontalFlip(p=transform_parameters['horizontal_flip_probability']),
         A.VerticalFlip(p=transform_parameters['vertical_flip_probability']),
         A.RandomRotate90(p=transform_parameters['random_rotate_90_probability']),
-        A.ShiftScaleRotate(
-            shift_limit=transform_parameters['shift_limit'],
-            scale_limit=transform_parameters['scale_limit'],
-            rotate_limit=transform_parameters['rotate_limit'],
-            interpolation=cv2.INTER_NEAREST,
-            border_mode=cv2.BORDER_CONSTANT,
-            value=(0, 0, 0),
-            mask_value=(0, 0, 0),
-            p=transform_parameters['shift_scale_rotate_probability']
-        ),
         A.ColorJitter(
             brightness=transform_parameters['brightness'],
             contrast=transform_parameters['contrast'],

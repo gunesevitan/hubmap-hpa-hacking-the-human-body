@@ -58,7 +58,7 @@ def get_semantic_segmentation_transforms(**transform_parameters):
             border_mode=cv2.BORDER_CONSTANT,
             value=(245, 245, 245),
             mask_value=(0, 0, 0),
-            p=1.0
+            p=transform_parameters['shift_scale_rotate_probability']
         ),
         A.Normalize(
             mean=transform_parameters['normalize_mean'],

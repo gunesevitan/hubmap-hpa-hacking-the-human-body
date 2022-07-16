@@ -61,7 +61,7 @@ transform_parameters:
   resize_width: 768
   horizontal_flip_probability: 0.5
   vertical_flip_probability: 0.5
-  random_rotate_90_probability: 0.5
+  random_rotate_90_probability: 0.25
   shift_limit: 0.1
   scale_limit: 0.2
   rotate_limit: 180

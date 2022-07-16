@@ -62,6 +62,9 @@ transform_parameters:
   horizontal_flip_probability: 0.5
   vertical_flip_probability: 0.5
   random_rotate_90_probability: 0.25
+  shift_limit: 0.1
+  scale_limit: 0.2
+  rotate_limit: 180
   normalize_mean: [0.8461123334500709, 0.8181881670128927, 0.8396328177126106]
   normalize_std: [0.15422885530869604, 0.19460989079464583, 0.16390648194643512]
   normalize_max_pixel_value: 255

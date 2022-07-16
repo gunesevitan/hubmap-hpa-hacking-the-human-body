@@ -50,6 +50,16 @@ def get_semantic_segmentation_transforms(**transform_parameters):
         A.HorizontalFlip(p=transform_parameters['horizontal_flip_probability']),
         A.VerticalFlip(p=transform_parameters['vertical_flip_probability']),
         A.RandomRotate90(p=transform_parameters['random_rotate_90_probability']),
+        A.ShiftScaleRotate(
+            shift_limit=transform_parameters['shift_limit'],
+            scale_limit=transform_parameters['scale_limit'],
+            rotate_limit=transform_parameters['rotate_limit'],
+            interpolation=cv2.INTER_NEAREST,
+            border_mode=cv2.BORDER_CONSTANT,
+            value=(245, 245, 245),
+            mask_value=(0, 0, 0),
+            p=1.0
+        ),
         A.Normalize(
             mean=transform_parameters['normalize_mean'],
             std=transform_parameters['normalize_std'],

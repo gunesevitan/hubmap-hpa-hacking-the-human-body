@@ -56,9 +56,16 @@ def get_semantic_segmentation_transforms(**transform_parameters):
             rotate_limit=transform_parameters['rotate_limit'],
             interpolation=cv2.INTER_NEAREST,
             border_mode=cv2.BORDER_CONSTANT,
-            value=(245, 245, 245),
+            value=(0, 0, 0),
             mask_value=(0, 0, 0),
             p=transform_parameters['shift_scale_rotate_probability']
+        ),
+        A.ColorJitter(
+            brightness=transform_parameters['brightness'],
+            contrast=transform_parameters['contrast'],
+            saturation=transform_parameters['saturation'],
+            hue=transform_parameters['hue'],
+            p=transform_parameters['color_jitter_probability']
         ),
         A.Normalize(
             mean=transform_parameters['normalize_mean'],

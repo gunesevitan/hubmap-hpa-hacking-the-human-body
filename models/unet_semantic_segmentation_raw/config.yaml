@@ -65,7 +65,12 @@ transform_parameters:
   shift_limit: 0.1
   scale_limit: 0.2
   rotate_limit: 180
-  shift_scale_rotate_probability: 0.5
+  shift_scale_rotate_probability: 0.25
+  brightness: 0.25
+  contrast: 0.25
+  saturation: 0.25
+  hue: 0.25
+  color_jitter_probability: 0.5
   normalize_mean: [0.8461123334500709, 0.8181881670128927, 0.8396328177126106]
   normalize_std: [0.15422885530869604, 0.19460989079464583, 0.16390648194643512]
   normalize_max_pixel_value: 255

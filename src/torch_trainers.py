@@ -144,7 +144,9 @@ class SemanticSegmentationTrainer:
                 image_paths=df_train.loc[train_idx, 'image_filename'].values,
                 masks=df_train.loc[train_idx, self.dataset_parameters['target_directory']].values,
                 transforms=dataset_transforms['train'],
-                mask_format=self.dataset_parameters['mask_format']
+                mask_format=self.dataset_parameters['mask_format'],
+                crop_black_border=self.dataset_parameters['crop_black_border'],
+                crop_background=self.dataset_parameters['crop_background']
             )
             train_loader = DataLoader(
                 train_dataset,
@@ -158,7 +160,9 @@ class SemanticSegmentationTrainer:
                 image_paths=df_train.loc[val_idx, 'image_filename'].values,
                 masks=df_train.loc[val_idx, self.dataset_parameters['target_directory']].values,
                 transforms=dataset_transforms['val'],
-                mask_format=self.dataset_parameters['mask_format']
+                mask_format=self.dataset_parameters['mask_format'],
+                crop_black_border=self.dataset_parameters['crop_black_border'],
+                crop_background=self.dataset_parameters['crop_background']
             )
             val_loader = DataLoader(
                 val_dataset,

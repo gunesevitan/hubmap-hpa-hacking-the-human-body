@@ -1,20 +1,22 @@
 import json
-import numpy as np
 import tifffile
 import torch
 from torch.utils.data import Dataset
 
 import annotation_utils
+import preprocessing
 
 
 class SemanticSegmentationDataset(Dataset):
 
-    def __init__(self, image_paths, masks=None, transforms=None, mask_format='rle'):
+    def __init__(self, image_paths, masks=None, transforms=None, mask_format='rle', crop_black_border=False, crop_background=False):
 
         self.image_paths = image_paths
         self.masks = masks
         self.transforms = transforms
         self.mask_format = mask_format
+        self.crop_black_border = crop_black_border
+        self.crop_background = crop_background
 
     def __len__(self):
         return len(self.image_paths)
@@ -49,6 +51,15 @@ class SemanticSegmentationDataset(Dataset):
             else:
                 raise ValueError('Invalid mask format')
 
+            if self.crop_black_border or self.crop_background:
+                # Crop black border or background from the image and mask
+                image, mask = preprocessing.crop_image(
+                    image=image,
+                    mask=mask,
+                    crop_black_border=self.crop_black_border,
+                    crop_background=self.crop_background
+                )
+
             if self.transforms is not None:
                 # Apply transforms to image and semantic segmentation mask
                 transformed = self.transforms(image=image, mask=mask)
@@ -66,6 +77,15 @@ class SemanticSegmentationDataset(Dataset):
             return image, mask
 
         else:
+
+            if self.crop_black_border or self.crop_background:
+                # Crop black border or background from the image
+                image, mask = preprocessing.crop_image(
+                    image=image,
+                    mask=None,
+                    crop_black_border=self.crop_black_border,
+                    crop_background=self.crop_background
+                )
 
             if self.transforms is not None:
                 # Apply transforms to image

@@ -4,6 +4,8 @@ dataset_parameters:
   input_directory: train_images
   target_directory: rle
   mask_format: rle
+  crop_black_border: True
+  crop_background: True
 
 model_parameters:
   model_class: Unet

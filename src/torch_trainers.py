@@ -213,57 +213,6 @@ class SemanticSegmentationTrainer:
                     train_loss = self.train(train_loader, model, criterion, optimizer, device, scheduler)
                     val_loss, val_dice_coefficients, val_intersection_over_unions = self.validate(val_loader, model, criterion, device)
 
-                if self.persistence_parameters['visualize_epoch_predictions']:
-
-                    model.eval()
-
-                    # Create directory for epoch predictions visualizations
-                    epoch_predictions_directory = Path(model_root_directory / 'epoch_predictions')
-                    epoch_predictions_directory.mkdir(parents=True, exist_ok=True)
-
-                    # Sample single image for every organ type from training set with fixed random seed for evaluating epochs
-                    np.random.seed(self.training_parameters['random_state'])
-                    df_evaluation = pd.concat((
-                        df_train.groupby('organ').sample(1),
-                        df_test
-                    ), ignore_index=True, axis=0)
-
-                    for idx, row in df_evaluation.iterrows():
-
-                        evaluation_image = tifffile.imread(row['image_filename'])
-                        if row['data_source'] != 'Hubmap':
-                            evaluation_ground_truth_mask = annotation_utils.decode_rle_mask(rle_mask=row['rle'], shape=evaluation_image.shape[:2]).T
-                        else:
-                            evaluation_ground_truth_mask = None
-                        evaluation_inputs = dataset_transforms['val'](image=evaluation_image)['image'].float()
-                        evaluation_inputs = evaluation_inputs.to(device)
-
-                        with torch.no_grad():
-                            evaluation_outputs = model(torch.unsqueeze(evaluation_inputs, dim=0))
-
-                        evaluation_predictions_mask = torch.sigmoid(torch.squeeze(torch.squeeze(evaluation_outputs.detach().cpu(), dim=0), dim=0)).numpy().astype(np.float32)
-                        # Resize evaluation predictions mask back to its original size and evaluate it on multiple thresholds
-                        evaluation_predictions_mask = cv2.resize(evaluation_predictions_mask, (evaluation_image.shape[1], evaluation_image.shape[0]), interpolation=cv2.INTER_LANCZOS4)
-                        evaluation_summary = evaluation.evaluate_predictions(
-                            ground_truth=evaluation_ground_truth_mask,
-                            predictions=evaluation_predictions_mask,
-                            threshold=self.inference_parameters['label_thresholds'][row['organ']],
-                            thresholds=self.inference_parameters['label_threshold_range']
-                        )
-
-                        # Convert evaluation predictions mask's soft predictions to labels and visualize it
-                        evaluation_predictions_mask = metrics.soft_predictions_to_labels(x=evaluation_predictions_mask, threshold=self.inference_parameters['label_thresholds'][row['organ']])
-                        visualization.visualize_predictions(
-                            image=evaluation_image,
-                            ground_truth=evaluation_ground_truth_mask,
-                            predictions=evaluation_predictions_mask,
-                            metadata=row.to_dict(),
-                            evaluation_summary=evaluation_summary,
-                            path=epoch_predictions_directory / f'{row["id"]}_{row["organ"]}_{fold}_epoch{epoch}_predictions.png'
-                        )
-
-                    logging.info(f'Saved {fold} epoch {epoch} predictions to {epoch_predictions_directory}')
-
                 logging.info(
                     f'''
                     Epoch {epoch} - Training Loss: {train_loss:.4f} Validation Loss: {val_loss:.4f}
@@ -277,6 +226,58 @@ class SemanticSegmentationTrainer:
                     if self.persistence_parameters['save_models']:
                         torch.save(model.state_dict(), model_root_directory / f'model_{fold}.pt')
                         logging.info(f'Saved model_{fold}.pt to {model_root_directory} (validation loss decreased from {best_val_loss:.6f} to {val_loss:.6f})')
+
+                    # Save epoch predictions if validation loss improves
+                    if self.persistence_parameters['visualize_epoch_predictions']:
+
+                        model.eval()
+
+                        # Create directory for epoch predictions visualizations
+                        epoch_predictions_directory = Path(model_root_directory / 'epoch_predictions')
+                        epoch_predictions_directory.mkdir(parents=True, exist_ok=True)
+
+                        # Sample single image for every organ type from training set with fixed random seed for evaluating epochs
+                        np.random.seed(self.training_parameters['random_state'])
+                        df_evaluation = pd.concat((
+                            df_train.groupby('organ').sample(1),
+                            df_test
+                        ), ignore_index=True, axis=0)
+
+                        for idx, row in df_evaluation.iterrows():
+
+                            evaluation_image = tifffile.imread(row['image_filename'])
+                            if row['data_source'] != 'Hubmap':
+                                evaluation_ground_truth_mask = annotation_utils.decode_rle_mask(rle_mask=row['rle'], shape=evaluation_image.shape[:2]).T
+                            else:
+                                evaluation_ground_truth_mask = None
+                            evaluation_inputs = dataset_transforms['val'](image=evaluation_image)['image'].float()
+                            evaluation_inputs = evaluation_inputs.to(device)
+
+                            with torch.no_grad():
+                                evaluation_outputs = model(torch.unsqueeze(evaluation_inputs, dim=0))
+
+                            evaluation_predictions_mask = torch.sigmoid(torch.squeeze(torch.squeeze(evaluation_outputs.detach().cpu(), dim=0), dim=0)).numpy().astype(np.float32)
+                            # Resize evaluation predictions mask back to its original size and evaluate it on multiple thresholds
+                            evaluation_predictions_mask = cv2.resize(evaluation_predictions_mask, (evaluation_image.shape[1], evaluation_image.shape[0]), interpolation=cv2.INTER_LANCZOS4)
+                            evaluation_summary = evaluation.evaluate_predictions(
+                                ground_truth=evaluation_ground_truth_mask,
+                                predictions=evaluation_predictions_mask,
+                                threshold=self.inference_parameters['label_thresholds'][row['organ']],
+                                thresholds=self.inference_parameters['label_threshold_range']
+                            )
+
+                            # Convert evaluation predictions mask's soft predictions to labels and visualize it
+                            evaluation_predictions_mask = metrics.soft_predictions_to_labels(x=evaluation_predictions_mask, threshold=self.inference_parameters['label_thresholds'][row['organ']])
+                            visualization.visualize_predictions(
+                                image=evaluation_image,
+                                ground_truth=evaluation_ground_truth_mask,
+                                predictions=evaluation_predictions_mask,
+                                metadata=row.to_dict(),
+                                evaluation_summary=evaluation_summary,
+                                path=epoch_predictions_directory / f'{row["id"]}_{row["organ"]}_{fold}_epoch{epoch}_{val_loss:.4f}_predictions.png'
+                            )
+
+                        logging.info(f'Saved {fold} epoch {epoch} predictions to {epoch_predictions_directory}')
 
                 summary['train_loss'].append(train_loss)
                 summary['val_loss'].append(val_loss)

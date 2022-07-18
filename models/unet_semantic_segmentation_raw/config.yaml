@@ -8,6 +8,7 @@ dataset_parameters:
   crop_background: True
 
 model_parameters:
+  model_module: monai
   model_class: SegResNet
   model_args:
     spatial_dims: 2

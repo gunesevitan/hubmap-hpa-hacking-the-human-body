@@ -50,7 +50,10 @@ def _get_hubmap_kidney_segmentation_data(df, df_hubmap_kidney_segmentation, mask
     return df
 
 
-def preprocess_datasets(df_train, df_test, df_folds, df_hubmap_kidney_segmentation, mask_area_range=(5000, 500000)):
+def preprocess_datasets(
+        df_train, df_test, df_folds, df_hubmap_kidney_segmentation,
+        include_hubmap_kidney_segmentation_data, mask_area_range=(5000, 500000)
+):
 
     """
     Preprocess training and test sets
@@ -60,6 +63,7 @@ def preprocess_datasets(df_train, df_test, df_folds, df_hubmap_kidney_segmentati
     df_train (pandas.DataFrame of shape (n_rows, n_columns)): Training dataframe
     df_test (pandas.DataFrame of shape (n_rows, n_columns)): Test dataframe
     df_folds (pandas.DataFrame of shape (n_rows, n_folds)): Folds
+    include_hubmap_kidney_segmentation_data (bool): Whether to include HuBMAP Kidney Segmentation data or not
     df_hubmap_kidney_segmentation (pandas.DataFrame of shape (n_rows, n_columns)): HuBMAP Kidney Segmentation dataframe
     mask_area_range (tuple): Lower and upper bounds of mask area thresholds for HuBMAP Kidney Segmentation masks
 
@@ -70,10 +74,11 @@ def preprocess_datasets(df_train, df_test, df_folds, df_hubmap_kidney_segmentati
     """
 
     df_train = _get_folds(df=df_train, df_folds=df_folds)
-    df_train = _get_hubmap_kidney_segmentation_data(
-        df=df_train,
-        df_hubmap_kidney_segmentation=df_hubmap_kidney_segmentation,
-        mask_area_range=mask_area_range
-    )
+    if include_hubmap_kidney_segmentation_data:
+        df_train = _get_hubmap_kidney_segmentation_data(
+            df=df_train,
+            df_hubmap_kidney_segmentation=df_hubmap_kidney_segmentation,
+            mask_area_range=mask_area_range
+        )
 
     return df_train, df_test

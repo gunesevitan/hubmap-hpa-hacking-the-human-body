@@ -24,7 +24,7 @@ if __name__ == '__main__':
         df_test=df_test,
         df_folds=df_folds,
         df_hubmap_kidney_segmentation=df_hubmap_kidney_segmentation,
-        include_hubmap_kidney_segmentation_data=config['dataset_parameters']['include_hubmap_kidney_segmentation_data'],
+        hubmap_kidney_segmentation_sample_count=config['dataset_parameters']['hubmap_kidney_segmentation_sample_count'],
         mask_area_range=config['dataset_parameters']['mask_area_range']
     )
 

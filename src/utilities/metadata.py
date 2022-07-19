@@ -41,7 +41,7 @@ if __name__ == '__main__':
         # Extract metadata from mask
         rle_mask = df_train.loc[df_train['id'] == image_id, 'rle'].values[0]
         mask = annotation_utils.decode_rle_mask(rle_mask=rle_mask, shape=image.shape[:2]).T
-        df_train.loc[df_train['id'] == image_id, 'rle_mask_area'] = np.sum(mask)
+        df_train.loc[df_train['id'] == image_id, 'mask_area'] = np.sum(mask)
 
         # Extract metadata from polygons
         polygons = annotation_utils.get_segmentation_polygons_from_json(
@@ -92,6 +92,7 @@ if __name__ == '__main__':
             'data_source': 'Hubmap',
             'img_height': 1024,
             'img_width': 1024,
+            'rle': annotation_utils.encode_rle_mask(mask),
             'age': 0,
             'sex': 0,
             'mask_area': np.sum(mask)

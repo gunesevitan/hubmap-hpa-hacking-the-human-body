@@ -86,7 +86,7 @@ if __name__ == '__main__':
         image_id = image_filename.split('/')[-1].split('.')[0]
         # Extract metadata from mask
         mask = cv2.imread(str(settings.DATA / 'hubmap_kidney_segmentation' / 'masks' / f'{image_id}.png'), -1)
-        
+
         hubmap_kidney_segmentation_metadata.append({
             'id': image_id,
             'mask_area': np.sum(mask)

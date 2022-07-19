@@ -3,6 +3,7 @@ import yaml
 import pandas as pd
 
 import settings
+import tabular_preprocessing
 from torch_trainers import SemanticSegmentationTrainer
 
 
@@ -15,8 +16,17 @@ if __name__ == '__main__':
 
     config = yaml.load(open(args.config_path, 'r'), Loader=yaml.FullLoader)
     df_train = pd.read_csv(settings.DATA / 'train_metadata.csv')
-    df_train = df_train.merge(pd.read_csv(settings.DATA / 'folds.csv'), on='id', how='left')
     df_test = pd.read_csv(settings.DATA / 'test_metadata.csv')
+    df_folds = pd.read_csv(settings.DATA / 'folds.csv')
+    df_hubmap_kidney_segmentation = pd.read_csv(settings.DATA / 'hubmap_kidney_segmentation_metadata.csv')
+    df_train, df_test = tabular_preprocessing.preprocess_datasets(
+        df_train=df_train,
+        df_test=df_test,
+        df_folds=df_folds,
+        df_hubmap_kidney_segmentation=df_hubmap_kidney_segmentation,
+        include_hubmap_kidney_segmentation_data=config['dataset_parameters']['include_hubmap_kidney_segmentation_data'],
+        mask_area_range=config['dataset_parameters']['mask_area_range']
+    )
 
     if config['task'] == 'semantic_segmentation':
 

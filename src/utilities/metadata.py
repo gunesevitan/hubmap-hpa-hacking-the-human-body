@@ -21,7 +21,9 @@ if __name__ == '__main__':
 
     train_image_filenames = glob(str(settings.DATA / 'train_images' / '*.tiff'))
     test_image_filenames = glob(str(settings.DATA / 'test_images' / '*.tiff'))
+    hubmap_kidney_segmentation_image_filenames = glob(str(settings.DATA / 'hubmap_kidney_segmentation' / 'images' / '*.png'))
 
+    # Metadata of raw competition training set
     for image_filename in tqdm(train_image_filenames):
 
         # Extract metadata from image
@@ -54,6 +56,7 @@ if __name__ == '__main__':
     logging.info(f'Saved train_metadata.csv to {settings.DATA}')
     logging.info(f'Training Set Shape: {df_train.shape} - Memory Usage: {df_train.memory_usage().sum() / 1024 ** 2:.2f} MB')
 
+    # Metadata of raw competition test set
     for image_filename in tqdm(test_image_filenames):
 
         # Extract metadata from image
@@ -74,6 +77,21 @@ if __name__ == '__main__':
     df_test.to_csv(settings.DATA / 'test_metadata.csv', index=False)
     logging.info(f'Saved test_metadata.csv to {settings.DATA}')
     logging.info(f'Test Set Shape: {df_test.shape} - Memory Usage: {df_test.memory_usage().sum() / 1024 ** 2:.2f} MB')
+
+    # Metadata of raw hubmap kidney segmentation competition training set
+    hubmap_kidney_segmentation_metadata = []
+    for image_filename in tqdm(hubmap_kidney_segmentation_image_filenames):
+
+        image_id = image_filename.split('/')[-1].split('.')[0]
+        hubmap_kidney_segmentation_metadata.append({'id': image_id})
+
+    df_hubmap_kidney_segmentation_metadata = pd.DataFrame(hubmap_kidney_segmentation_metadata)
+    df_hubmap_kidney_segmentation_metadata['image_filename'] = df_hubmap_kidney_segmentation_metadata['id'].apply(lambda x: str(settings.DATA / 'hubmap_kidney_segmentation' / 'images' / f'{x}.png'))
+    df_hubmap_kidney_segmentation_metadata['mask_filename'] = df_hubmap_kidney_segmentation_metadata['id'].apply(lambda x: str(settings.DATA / 'hubmap_kidney_segmentation' / 'masks' / f'{x}.png'))
+    df_hubmap_kidney_segmentation_metadata['organ'] = 'kidney'
+    df_hubmap_kidney_segmentation_metadata.to_csv(settings.DATA / 'hubmap_kidney_segmentation_metadata.csv', index=False)
+    logging.info(f'Saved hubmap_kidney_segmentation_metadata.csv to {settings.DATA}')
+    logging.info(f'Test Set Shape: {df_hubmap_kidney_segmentation_metadata.shape} - Memory Usage: {df_hubmap_kidney_segmentation_metadata.memory_usage().sum() / 1024 ** 2:.2f} MB')
 
     imaging_measurements = {
         'hpa': {

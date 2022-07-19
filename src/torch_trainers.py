@@ -139,10 +139,14 @@ class SemanticSegmentationTrainer:
         for fold in self.training_parameters['folds']:
 
             train_idx, val_idx = df_train.loc[df_train[fold] == 0].index, df_train.loc[df_train[fold] == 1].index
+            # Validate on training set if validation is set is not specified
+            if len(val_idx) == 0:
+                val_idx = train_idx
+
             logging.info(f'\n{fold} - Training: {len(train_idx)} ({len(train_idx) // self.training_parameters["training_batch_size"] + 1} steps) - Validation {len(val_idx)} ({len(val_idx) // self.training_parameters["test_batch_size"] + 1} steps)')
             train_dataset = torch_datasets.SemanticSegmentationDataset(
-                image_paths=df_train.loc[train_idx, 'image_filename'].values,
-                masks=df_train.loc[train_idx, self.dataset_parameters['target_directory']].values,
+                image_paths=df_train.loc[train_idx, self.dataset_parameters['inputs']].values,
+                masks=df_train.loc[train_idx, self.dataset_parameters['targets']].values,
                 transforms=dataset_transforms['train'],
                 mask_format=self.dataset_parameters['mask_format'],
                 crop_black_border=self.dataset_parameters['crop_black_border'],
@@ -157,8 +161,8 @@ class SemanticSegmentationTrainer:
                 num_workers=self.training_parameters['num_workers']
             )
             val_dataset = torch_datasets.SemanticSegmentationDataset(
-                image_paths=df_train.loc[val_idx, 'image_filename'].values,
-                masks=df_train.loc[val_idx, self.dataset_parameters['target_directory']].values,
+                image_paths=df_train.loc[val_idx, self.dataset_parameters['inputs']].values,
+                masks=df_train.loc[val_idx, self.dataset_parameters['targets']].values,
                 transforms=dataset_transforms['val'],
                 mask_format=self.dataset_parameters['mask_format'],
                 crop_black_border=self.dataset_parameters['crop_black_border'],
@@ -209,7 +213,7 @@ class SemanticSegmentationTrainer:
                     val_loss, val_dice_coefficients, val_intersection_over_unions = self.validate(val_loader, model, criterion, device)
                     scheduler.step(val_loss)
                 else:
-                    # Learning rate scheduler works in validation function if it is not ReduceLROnPlateau
+                    # Learning rate scheduler works in training function if it is not ReduceLROnPlateau
                     train_loss = self.train(train_loader, model, criterion, optimizer, device, scheduler)
                     val_loss, val_dice_coefficients, val_intersection_over_unions = self.validate(val_loader, model, criterion, device)
 
@@ -227,7 +231,7 @@ class SemanticSegmentationTrainer:
                         torch.save(model.state_dict(), model_root_directory / f'model_{fold}.pt')
                         logging.info(f'Saved model_{fold}.pt to {model_root_directory} (validation loss decreased from {best_val_loss:.6f} to {val_loss:.6f})')
 
-                    # Save epoch predictions if validation loss improves
+                    # Save epoch predictions visualizations if validation loss improves
                     if self.persistence_parameters['visualize_epoch_predictions']:
 
                         model.eval()
@@ -239,14 +243,22 @@ class SemanticSegmentationTrainer:
                         # Sample single image for every organ type from training set with fixed random seed for evaluating epochs
                         np.random.seed(self.training_parameters['random_state'])
                         df_evaluation = pd.concat((
-                            df_train.groupby('organ').sample(1),
+                            df_train.loc[val_idx, :].groupby('organ').sample(1),
                             df_test
                         ), ignore_index=True, axis=0)
 
                         for idx, row in df_evaluation.iterrows():
 
-                            evaluation_image = tifffile.imread(row['image_filename'])
-                            if row['data_source'] != 'Hubmap':
+                            image_format = row['image_filename'].split('/')[-1].split('.')[-1]
+                            if image_format == 'tiff':
+                                evaluation_image = tifffile.imread(row['image_filename'])
+                            elif image_format == 'png':
+                                evaluation_image = cv2.imread(row['image_filename'])
+                                evaluation_image = cv2.cvtColor(evaluation_image, cv2.COLOR_BGR2RGB)
+                            else:
+                                raise ValueError(f'Invalid image format: {image_format}')
+
+                            if idx != (df_evaluation.shape[0] - 1):
                                 evaluation_ground_truth_mask = annotation_utils.decode_rle_mask(rle_mask=row['rle'], shape=evaluation_image.shape[:2]).T
                             else:
                                 evaluation_ground_truth_mask = None

@@ -1,25 +1,32 @@
 task: semantic_segmentation
 
 dataset_parameters:
-  input_directory: train_images
-  target_directory: rle
+  inputs: image_filename
+  targets: rle
   mask_format: rle
-  crop_black_border: True
-  crop_background: True
+  include_hubmap_kidney_segmentation_data: True
+  mask_area_range: [5000, 500000]
+  crop_black_border: False
+  crop_background: False
 
 model_parameters:
-  model_module: monai
-  model_class: SegResNet
+  model_module: smp
+  model_class: Unet
   model_args:
-    spatial_dims: 2
+    encoder_name: efficientnet-b0
+    encoder_depth: 5
+    encoder_weights: imagenet
+    decoder_use_batchnorm: True
+    decoder_channels: [256, 128, 64, 32, 16]
+    decoder_attention_type: null
     in_channels: 3
-    out_channels: 1
-    dropout_prob: 0.0
-    upsample_mode: nontrainable
+    classes: 1
+    activation: null
+    aux_params: null
   model_checkpoint_path: null
 
 training_parameters:
-  folds: [fold1]#, fold2, fold3, fold4, fold5]
+  folds: [fold6]
   loss_function: WeightedSegmentationLoss
   loss_args:
     distribution_based_loss_function: SoftBCEWithLogitsLoss
@@ -42,12 +49,12 @@ training_parameters:
     weight_decay: 0.0
   lr_scheduler: StepLR
   lr_scheduler_args:
-    step_size: 200
+    step_size: 1500
     gamma: 0.5
     last_epoch: -1
   epochs: 250
   early_stopping_patience: 10
-  training_batch_size: 8
+  training_batch_size: 16
   test_batch_size: 16
   num_workers: 4
   random_state: 42
@@ -57,8 +64,8 @@ training_parameters:
 transform_parameters:
   resize_height: 768
   resize_width: 768
-  resize_scale: [0.3, 0.7]
-  resize_ratio: [0.8, 1.2]
+  resize_scale: [0.7, 0.95]
+  resize_ratio: [0.9, 1.1]
   horizontal_flip_probability: 0.5
   vertical_flip_probability: 0.5
   random_rotate_90_probability: 0.25
@@ -67,12 +74,12 @@ transform_parameters:
   saturation: 0.25
   hue: 0.25
   color_jitter_probability: 0.5
-  normalize_mean: [0.8461123334500709, 0.8181881670128927, 0.8396328177126106]
-  normalize_std: [0.15422885530869604, 0.19460989079464583, 0.16390648194643512]
+  normalize_mean: [0.6864609437833393, 0.5534345620480285, 0.7187172954823893]
+  normalize_std: [0.18722252278327903, 0.26679424300841664, 0.16788759187664415]
   normalize_max_pixel_value: 255
 
 inference_parameters:
-  folds: [fold1]#, fold2, fold3, fold4, fold5]
+  folds: [fold6]
   label_threshold_range: [0.5]
   label_thresholds:
     kidney: 0.5

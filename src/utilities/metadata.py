@@ -5,6 +5,7 @@ from glob import glob
 import json
 import numpy as np
 import pandas as pd
+import cv2
 import tifffile
 
 sys.path.append('..')
@@ -23,7 +24,7 @@ if __name__ == '__main__':
     test_image_filenames = glob(str(settings.DATA / 'test_images' / '*.tiff'))
     hubmap_kidney_segmentation_image_filenames = glob(str(settings.DATA / 'hubmap_kidney_segmentation' / 'images' / '*.png'))
 
-    # Metadata of raw competition training set
+    # Metadata of hubmap+hpa organ segmentation competition training set
     for image_filename in tqdm(train_image_filenames):
 
         # Extract metadata from image
@@ -56,7 +57,7 @@ if __name__ == '__main__':
     logging.info(f'Saved train_metadata.csv to {settings.DATA}')
     logging.info(f'Training Set Shape: {df_train.shape} - Memory Usage: {df_train.memory_usage().sum() / 1024 ** 2:.2f} MB')
 
-    # Metadata of raw competition test set
+    # Metadata of hubmap+hpa organ segmentation competition test set
     for image_filename in tqdm(test_image_filenames):
 
         # Extract metadata from image
@@ -78,12 +79,18 @@ if __name__ == '__main__':
     logging.info(f'Saved test_metadata.csv to {settings.DATA}')
     logging.info(f'Test Set Shape: {df_test.shape} - Memory Usage: {df_test.memory_usage().sum() / 1024 ** 2:.2f} MB')
 
-    # Metadata of raw hubmap kidney segmentation competition training set
+    # Metadata of hubmap kidney segmentation competition training set
     hubmap_kidney_segmentation_metadata = []
     for image_filename in tqdm(hubmap_kidney_segmentation_image_filenames):
 
         image_id = image_filename.split('/')[-1].split('.')[0]
-        hubmap_kidney_segmentation_metadata.append({'id': image_id})
+        # Extract metadata from mask
+        mask = cv2.imread(str(settings.DATA / 'hubmap_kidney_segmentation' / 'masks' / f'{image_id}.png'), -1)
+        
+        hubmap_kidney_segmentation_metadata.append({
+            'id': image_id,
+            'mask_area': np.sum(mask)
+        })
 
     df_hubmap_kidney_segmentation_metadata = pd.DataFrame(hubmap_kidney_segmentation_metadata)
     df_hubmap_kidney_segmentation_metadata['image_filename'] = df_hubmap_kidney_segmentation_metadata['id'].apply(lambda x: str(settings.DATA / 'hubmap_kidney_segmentation' / 'images' / f'{x}.png'))

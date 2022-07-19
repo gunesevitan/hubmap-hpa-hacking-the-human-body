@@ -89,6 +89,11 @@ if __name__ == '__main__':
 
         hubmap_kidney_segmentation_metadata.append({
             'id': image_id,
+            'data_source': 'Hubmap',
+            'img_height': 1024,
+            'img_width': 1024,
+            'age': 0,
+            'sex': 0,
             'mask_area': np.sum(mask)
         })
 

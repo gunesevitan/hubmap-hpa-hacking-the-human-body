@@ -1,4 +1,5 @@
 import json
+import cv2
 import tifffile
 import torch
 from torch.utils.data import Dataset
@@ -36,7 +37,14 @@ class SemanticSegmentationDataset(Dataset):
         mask (torch.FloatTensor of shape (1, height, width)): Mask tensor
         """
 
-        image = tifffile.imread(str(self.image_paths[idx]))
+        image_format = self.image_paths[idx].split('/')[-1].split('.')[-1]
+        if image_format == 'tiff':
+            image = tifffile.imread(str(self.image_paths[idx]))
+        elif image_format == 'png':
+            image = cv2.imread(str(self.image_paths[idx]))
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        else:
+            raise ValueError(f'Invalid image format: {image_format}')
 
         if self.masks is not None:
 
@@ -49,7 +57,7 @@ class SemanticSegmentationDataset(Dataset):
                     polygons = json.load(f)
                 mask = annotation_utils.polygon_to_mask(polygons=polygons, shape=image.shape[:2])
             else:
-                raise ValueError('Invalid mask format')
+                raise ValueError(f'Invalid mask format: {self.mask_format}')
 
             if self.crop_black_border or self.crop_background:
                 # Crop black border or background from the image and mask

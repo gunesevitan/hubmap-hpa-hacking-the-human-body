@@ -4,7 +4,7 @@ dataset_parameters:
   inputs: image_filename
   targets: rle
   mask_format: rle
-  include_hubmap_kidney_segmentation_data: True
+  hubmap_kidney_segmentation_sample_count: 50
   mask_area_range: [5000, 500000]
   crop_black_border: False
   crop_background: False
@@ -26,7 +26,7 @@ model_parameters:
   model_checkpoint_path: null
 
 training_parameters:
-  folds: [fold6]
+  folds: [fold1]
   loss_function: WeightedSegmentationLoss
   loss_args:
     distribution_based_loss_function: SoftBCEWithLogitsLoss

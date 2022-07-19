@@ -32,6 +32,8 @@ def get_folds(df, n_splits, shuffle=True, random_state=42, verbose=True):
         df.loc[validation_idx, f'fold{fold}'] = 1
         df[f'fold{fold}'] = df[f'fold{fold}'].astype(np.uint8)
 
+    df['fold6'] = 0
+
     if verbose:
         logging.info(f'Dataset split into {n_splits} folds')
         for fold in range(1, n_splits + 1):

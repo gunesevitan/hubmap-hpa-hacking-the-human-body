@@ -59,7 +59,15 @@ def get_semantic_segmentation_transforms(**transform_parameters):
             hue=transform_parameters['hue'],
             p=transform_parameters['color_jitter_probability']
         ),
-        A.ChannelShuffle(p=transform_parameters['channel_shuffle_probability']),
+        A.OneOf([
+            A.RGBShift(
+                r_shift_limit=transform_parameters['r_shift_limit'],
+                g_shift_limit=transform_parameters['g_shift_limit'],
+                b_shift_limit=transform_parameters['b_shift_limit'],
+                p=transform_parameters['rgb_shift_probability']
+            ),
+            A.ChannelShuffle(p=transform_parameters['channel_shuffle_probability']),
+        ], p=transform_parameters['rgb_augmentation_probability']),
         A.Normalize(
             mean=transform_parameters['normalize_mean'],
             std=transform_parameters['normalize_std'],

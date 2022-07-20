@@ -5,7 +5,7 @@ dataset_parameters:
   targets: rle
   mask_format: rle
   hubmap_kidney_segmentation_sample_count: 50
-  mask_area_range: [5000, 500000]
+  mask_area_range: [100000, 500000]
   crop_black_border: False
   crop_background: False
 
@@ -73,7 +73,8 @@ transform_parameters:
   contrast: 0.3
   saturation: 0.3
   hue: 0.3
-  color_jitter_probability: 1.0
+  color_jitter_probability: 0.5
+  channel_shuffle_probability: 0.5
   normalize_mean: [0.6864609437833393, 0.5534345620480285, 0.7187172954823893]
   normalize_std: [0.18722252278327903, 0.26679424300841664, 0.16788759187664415]
   normalize_max_pixel_value: 255

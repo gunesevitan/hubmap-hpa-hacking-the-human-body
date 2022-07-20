@@ -59,6 +59,7 @@ def get_semantic_segmentation_transforms(**transform_parameters):
             hue=transform_parameters['hue'],
             p=transform_parameters['color_jitter_probability']
         ),
+        A.ChannelShuffle(p=transform_parameters['channel_shuffle_probability']),
         A.Normalize(
             mean=transform_parameters['normalize_mean'],
             std=transform_parameters['normalize_std'],

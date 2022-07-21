@@ -8,7 +8,6 @@ import cv2
 
 sys.path.append('..')
 import settings
-import annotation_utils
 
 
 if __name__ == '__main__':

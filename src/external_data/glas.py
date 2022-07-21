@@ -42,7 +42,7 @@ if __name__ == '__main__':
         metadata.append({
             'id': image_id,
             'organ': 'colon',
-            'data_source': 'Warwick QU Dataset',
+            'data_source': 'GlaS',
             'stain': 'H&E',
             'image_height': image.shape[0],
             'image_width': image.shape[1],

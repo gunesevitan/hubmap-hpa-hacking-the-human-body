@@ -39,7 +39,7 @@ if __name__ == '__main__':
             'stain': 'H&E',
             'image_height': image.shape[0],
             'image_width': image.shape[1],
-            'pixel_size': np.nan,
+            'pixel_size': 0.55,
             'tissue_thickness': np.nan,
             'rle': np.nan,
             'age': np.nan,

@@ -13,7 +13,7 @@ import annotation_utils
 
 if __name__ == '__main__':
 
-    dataset_path = settings.DATA / 'external_data' / 'Warwick QU Dataset'
+    dataset_path = settings.DATA / 'external_data' / 'GlaS'
     image_filenames = sorted(glob(str(dataset_path / 'images' / '*.bmp')))
 
     metadata = []
@@ -46,7 +46,7 @@ if __name__ == '__main__':
             'stain': 'H&E',
             'image_height': image.shape[0],
             'image_width': image.shape[1],
-            'pixel_size': np.nan,
+            'pixel_size': 0.465,
             'tissue_thickness': np.nan,
             'rle': annotation_utils.encode_rle_mask(mask),
             'age': np.nan,

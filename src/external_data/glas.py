@@ -46,7 +46,7 @@ if __name__ == '__main__':
             'stain': 'H&E',
             'image_height': image.shape[0],
             'image_width': image.shape[1],
-            'pixel_size': 0.465,
+            'pixel_size': 0.620,
             'tissue_thickness': np.nan,
             'rle': annotation_utils.encode_rle_mask(mask),
             'age': np.nan,

@@ -2,6 +2,7 @@ import logging
 import sys
 from glob import glob
 from tqdm import tqdm
+from shutil import copy2
 import xml.etree.ElementTree as ET
 import numpy as np
 import pandas as pd
@@ -103,6 +104,8 @@ if __name__ == '__main__':
             annotations = ET.parse(f'{patient_directory}/{image_id}.xml').getroot()
             image = tifffile.imread(image_filename)
 
+            copy2(image_filename, dataset_path / 'images')
+
             # Extract metadata from image
             image_r_mean = np.mean(image[:, :, 0])
             image_r_std = np.std(image[:, :, 0])
@@ -130,7 +133,7 @@ if __name__ == '__main__':
                 'image_b_mean': image_b_mean,
                 'image_b_std': image_b_std,
                 'mask_area': np.nan,
-                'image_filename': image_filename,
+                'image_filename': str(dataset_path / 'images' / f'{image_id}.tif'),
                 'mask_filename': np.nan
             })
 

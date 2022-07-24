@@ -19,17 +19,35 @@ if __name__ == '__main__':
 
     train_raw_images_filenames = glob(str(settings.DATA / 'train_images' / '*.tiff'))
     test_raw_images_filenames = glob(str(settings.DATA / 'test_images' / '*.tiff'))
-    hubmap_kidney_segmentation_images_filenames = glob(str(settings.DATA / 'hubmap_kidney_segmentation' / 'images' / '*.png'))
+    hpa_images_filenames = glob(str(settings.DATA / 'external_data' / 'HPA' / 'images' / '*.png'))
+    hubmap_kidney_segmentation_images_filenames = glob(str(settings.DATA / 'external_data' / 'HuBMAP_Kidney_Segmentation' / 'images' / '*.png'))
+    hubmap_portal_images_filenames = glob(str(settings.DATA / 'external_data' / 'HuBMAP_Portal' / 'images' / '*.png'))
+    anhir_images_filenames = glob(str(settings.DATA / 'external_data' / 'ANHIR' / 'images' / '*.jpg'))
+    consep_images_filenames = glob(str(settings.DATA / 'external_data' / 'CoNSeP' / 'images' / '*.png'))
+    crag_images_filenames = glob(str(settings.DATA / 'external_data' / 'CRAG' / 'images' / '*.png'))
+    crchistophenotypes_images_filenames = glob(str(settings.DATA / 'external_data' / 'CRCHistoPhenotypes' / 'images' / '*.bmp'))
+    glas_images_filenames = glob(str(settings.DATA / 'external_data' / 'GlaS' / 'images' / '*.bmp'))
+    lyon19_images_filenames = glob(str(settings.DATA / 'external_data' / 'LYON19' / 'images' / '*.png'))
+    monusac_images_filenames = glob(str(settings.DATA / 'external_data' / 'MoNuSAC' / 'images' / '*.tif'))
+    monuseg_images_filenames = glob(str(settings.DATA / 'external_data' / 'MoNuSeg' / 'images' / '*.tif'))
+    pannuke_images_filenames = glob(str(settings.DATA / 'external_data' / 'PanNuke' / 'images' / '*.png'))
 
-    image_filenames = train_raw_images_filenames + test_raw_images_filenames + hubmap_kidney_segmentation_images_filenames
+    image_filenames = train_raw_images_filenames + test_raw_images_filenames + hpa_images_filenames +\
+                      hubmap_kidney_segmentation_images_filenames + hubmap_portal_images_filenames +\
+                      anhir_images_filenames + consep_images_filenames + crag_images_filenames +\
+                      crchistophenotypes_images_filenames + glas_images_filenames + lyon19_images_filenames +\
+                      monusac_images_filenames + monuseg_images_filenames + pannuke_images_filenames
 
     for image_filename in tqdm(image_filenames):
 
-        if image_filename.split('.')[-1] == 'tiff':
+        if image_filename.split('.')[-1] == 'tiff' or image_filename.split('.')[-1] == 'tif':
             image = tifffile.imread(image_filename)
-        elif image_filename.split('.')[-1] == 'png':
+        elif image_filename.split('.')[-1] == 'png' or image_filename.split('.')[-1] == 'jpg' or image_filename.split('.')[-1] == 'bmp':
             image = cv2.imread(image_filename)
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+        if image.shape[2] == 4:
+            image = image[:, :, :3]
 
         image = np.float32(image) / 255.
 

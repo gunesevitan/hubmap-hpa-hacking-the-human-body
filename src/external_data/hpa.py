@@ -13,13 +13,13 @@ import requests
 
 sys.path.append('..')
 import settings
-
+import annotation_utils
 
 
 if __name__ == '__main__':
 
     dataset_path = settings.DATA / 'external_data' / 'HPA'
-
+    download_images = False
     base_url = 'https://images.proteinatlas.org/dictionary_images'
     filenames = {
         'cerebral_cortex': 'fileup5ebbc37a92939942766250_files',
@@ -126,39 +126,41 @@ if __name__ == '__main__':
     }
     magnification_level = 11
 
-    for organ, filename in filenames.items():
+    if download_images:
+        for organ, filename in filenames.items():
 
-        logging.info(f'Downloading Organ: {organ} Filename: {filename} Magnification Level: {magnification_level}')
+            logging.info(f'Downloading Organ: {organ} Filename: {filename} Magnification Level: {magnification_level}')
 
-        n_rows = 1
-        image_found = True
-        image_tiles = {}
-        while image_found:
+            n_rows = 1
+            image_found = True
+            image_tiles = {}
 
-            image_names = (
-                f'{comb[0]}_{comb[1]}.jpg'
-                for comb in list(set(product(range(n_rows), repeat=2)) - set(product(range(n_rows - 1), repeat=2)))
-            )
+            while image_found:
 
-            n_images_found = 0
-            for image_name in image_names:
+                image_names = (
+                    f'{comb[0]}_{comb[1]}.jpg'
+                    for comb in list(set(product(range(n_rows), repeat=2)) - set(product(range(n_rows - 1), repeat=2)))
+                )
 
-                image_url = f'{base_url}/{filename}/{magnification_level}/{image_name}'
-                response = requests.get(image_url, timeout=1)
-                time.sleep(0.1)
-                if response.status_code == 200:
-                    image = np.array(Image.open(BytesIO(response.content)))
-                    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                    image_tiles[image_name.split('.')[0]] = np.array(image)
-                    n_images_found += 1
+                n_images_found = 0
 
-            image_found = n_images_found > 0
-            if image_found:
-                n_rows += 1
+                for image_name in image_names:
+                    image_url = f'{base_url}/{filename}/{magnification_level}/{image_name}'
+                    response = requests.get(image_url, timeout=1)
+                    time.sleep(0.1)
+                    if response.status_code == 200:
+                        image = np.array(Image.open(BytesIO(response.content)))
+                        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                        image_tiles[image_name.split('.')[0]] = np.array(image)
+                        n_images_found += 1
 
-        image_tile_dimension = int(np.sqrt(len(image_tiles)))
-        stiched_image = np.hstack([np.vstack([image_tiles[f'{column}_{row}'] for row in range(image_tile_dimension)]) for column in range(image_tile_dimension)])
-        cv2.imwrite(str(dataset_path / 'images' / f'{organ}_he.png'), stiched_image)
+                image_found = n_images_found > 0
+                if image_found:
+                    n_rows += 1
+
+            image_tile_dimension = int(np.sqrt(len(image_tiles)))
+            stitched_image = np.hstack([np.vstack([image_tiles[f'{column}_{row}'] for row in range(image_tile_dimension)]) for column in range(image_tile_dimension)])
+            cv2.imwrite(str(dataset_path / 'images' / f'{organ}_he.png'), stitched_image)
 
     image_filenames = sorted(glob(str(dataset_path / 'images' / '*.png')))
 
@@ -167,9 +169,11 @@ if __name__ == '__main__':
     for image_filename in tqdm(image_filenames):
 
         image_id = image_filename.split("/")[-1].split(".")[0]
+        mask_filename = str(dataset_path / 'masks' / f'{image_id}.npy')
 
         image = cv2.imread(image_filename)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
         # Extract metadata from image
         image_r_mean = np.mean(image[:, :, 0])
         image_r_std = np.std(image[:, :, 0])
@@ -178,16 +182,24 @@ if __name__ == '__main__':
         image_b_mean = np.mean(image[:, :, 2])
         image_b_std = np.std(image[:, :, 2])
 
+        try:
+            mask = np.load(mask_filename)
+            # Extract metadata from mask
+            mask_area = np.sum(mask)
+        except FileNotFoundError:
+            mask = None
+            mask_area = None
+
         metadata.append({
             'id': image_id,
             'organ': '_'.join(image_id.split('_')[:-1]),
-            'data_source': 'HPA',
+            'data_source': 'HPA_Dictionary',
             'stain': 'H&E',
             'image_height': image.shape[0],
             'image_width': image.shape[1],
             'pixel_size': np.nan,
             'tissue_thickness': np.nan,
-            'rle': np.nan,
+            'rle': annotation_utils.encode_rle_mask(mask) if mask is not None else np.nan,
             'age': np.nan,
             'sex': np.nan,
             'image_r_mean': image_r_mean,
@@ -196,7 +208,7 @@ if __name__ == '__main__':
             'image_g_std': image_g_std,
             'image_b_mean': image_b_mean,
             'image_b_std': image_b_std,
-            'mask_area': np.nan,
+            'mask_area': mask_area if mask_area is not None else np.nan,
             'image_filename': image_filename,
             'mask_filename': np.nan
         })

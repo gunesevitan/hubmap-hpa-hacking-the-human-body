@@ -14,7 +14,6 @@ import preprocessing
 if __name__ == '__main__':
 
     resize_images = False
-
     dataset_path = settings.DATA / 'external_data' / 'UoM_Histology'
     image_filenames = sorted(glob(str(dataset_path / 'images' / '*.tiff')))
 

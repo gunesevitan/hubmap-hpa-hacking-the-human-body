@@ -18,14 +18,16 @@ if __name__ == '__main__':
     df_train = pd.read_csv(settings.DATA / 'train_metadata.csv')
     df_test = pd.read_csv(settings.DATA / 'test_metadata.csv')
     df_folds = pd.read_csv(settings.DATA / 'folds.csv')
-    df_hubmap_kidney_segmentation = pd.read_csv(settings.DATA / 'hubmap_kidney_segmentation_metadata.csv')
+    external_data = {
+        dataset: pd.read_csv(settings.DATA / 'external_data' / dataset / 'metadata.csv')
+        for dataset in config['dataset_parameters']['external_data']
+    }
+
     df_train, df_test = tabular_preprocessing.preprocess_datasets(
         df_train=df_train,
         df_test=df_test,
         df_folds=df_folds,
-        df_hubmap_kidney_segmentation=df_hubmap_kidney_segmentation,
-        hubmap_kidney_segmentation_sample_count=config['dataset_parameters']['hubmap_kidney_segmentation_sample_count'],
-        mask_area_range=config['dataset_parameters']['mask_area_range']
+        external_data=external_data
     )
 
     if config['task'] == 'semantic_segmentation':

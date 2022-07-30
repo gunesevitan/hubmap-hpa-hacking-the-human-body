@@ -50,6 +50,7 @@ if __name__ == '__main__':
 
         df_train.loc[df_train['id'] == image_id, 'image_filename'] = image_filename
         df_train.loc[df_train['id'] == image_id, 'polygon_filename'] = settings.DATA / 'train_annotations' / f'{image_id}.json'
+        df_train.loc[df_train['id'] == image_id, 'stain'] = 'DAB&H'
 
     df_train.rename(columns={'img_height': 'image_height', 'img_width': 'image_width'}, inplace=True)
     df_train.to_csv(settings.DATA / 'train_metadata.csv', index=False)
@@ -77,6 +78,7 @@ if __name__ == '__main__':
 
         df_test.loc[df_test['id'] == image_id, 'image_filename'] = image_filename
         df_test.loc[df_test['id'] == image_id, 'mask_filename'] = mask_filename
+        df_test.loc[df_test['id'] == image_id, 'stain'] = 'H&E'
 
     df_test['age'] = 0
     df_test['sex'] = 0

@@ -10,10 +10,11 @@ import preprocessing
 
 class SemanticSegmentationDataset(Dataset):
 
-    def __init__(self, image_paths, masks=None, transforms=None, mask_format='rle', crop_black_border=False, crop_background=False):
+    def __init__(self, image_paths, masks=None, data_sources=None, transforms=None, mask_format='rle', crop_black_border=False, crop_background=False):
 
         self.image_paths = image_paths
         self.masks = masks
+        self.data_sources = data_sources
         self.transforms = transforms
         self.mask_format = mask_format
         self.crop_black_border = crop_black_border
@@ -50,7 +51,11 @@ class SemanticSegmentationDataset(Dataset):
 
             if self.mask_format == 'rle':
                 # Decode RLE mask string into 2d binary semantic segmentation mask array
-                mask = annotation_utils.decode_rle_mask(rle_mask=self.masks[idx], shape=image.shape[:2]).T
+                mask = annotation_utils.decode_rle_mask(rle_mask=self.masks[idx], shape=image.shape[:2])
+                data_source = self.data_sources[idx]
+                # Transpose raw HPA and HuBMAP masks
+                if data_source == 'Hubmap' or data_source == 'HPA':
+                    mask = mask.T
             elif self.mask_format == 'polygon':
                 # Read polygon JSON file and convert it into 2d binary semantic segmentation mask array
                 with open(self.masks[idx], mode='r') as f:

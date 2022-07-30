@@ -41,39 +41,37 @@ def get_semantic_segmentation_transforms(**transform_parameters):
     """
 
     train_transforms = A.Compose([
-        A.RandomResizedCrop(
+        A.Resize(
             height=transform_parameters['resize_height'],
             width=transform_parameters['resize_width'],
-            scale=transform_parameters['resize_scale'],
-            ratio=transform_parameters['resize_ratio'],
             interpolation=cv2.INTER_NEAREST,
             always_apply=True
         ),
-        A.HorizontalFlip(p=transform_parameters['horizontal_flip_probability']),
-        A.VerticalFlip(p=transform_parameters['vertical_flip_probability']),
-        A.RandomRotate90(p=transform_parameters['random_rotate_90_probability']),
-        A.ColorJitter(
-            brightness=transform_parameters['brightness'],
-            contrast=transform_parameters['contrast'],
-            saturation=transform_parameters['saturation'],
-            hue=transform_parameters['hue'],
-            p=transform_parameters['color_jitter_probability']
-        ),
-        A.OneOf([
-            A.RGBShift(
-                r_shift_limit=transform_parameters['r_shift_limit'],
-                g_shift_limit=transform_parameters['g_shift_limit'],
-                b_shift_limit=transform_parameters['b_shift_limit'],
-                p=transform_parameters['rgb_shift_probability']
-            ),
-            A.ChannelShuffle(p=transform_parameters['channel_shuffle_probability']),
-        ], p=transform_parameters['rgb_augmentation_probability']),
-        A.Normalize(
-            mean=transform_parameters['normalize_mean'],
-            std=transform_parameters['normalize_std'],
-            max_pixel_value=transform_parameters['normalize_max_pixel_value'],
-            always_apply=True
-        ),
+        #A.RandomResizedCrop(
+        #    height=transform_parameters['resize_height'],
+        #    width=transform_parameters['resize_width'],
+        #    scale=transform_parameters['resize_scale'],
+        #    ratio=transform_parameters['resize_ratio'],
+        #    interpolation=cv2.INTER_NEAREST,
+        #    always_apply=True
+        #),
+        #A.HorizontalFlip(p=transform_parameters['horizontal_flip_probability']),
+        #A.VerticalFlip(p=transform_parameters['vertical_flip_probability']),
+        #A.RandomRotate90(p=transform_parameters['random_rotate_90_probability']),
+        #A.ColorJitter(
+        #    brightness=transform_parameters['brightness'],
+        #    contrast=transform_parameters['contrast'],
+        #    saturation=transform_parameters['saturation'],
+        #    hue=transform_parameters['hue'],
+        #    p=transform_parameters['color_jitter_probability']
+        #),
+        #A.Normalize(
+        #    mean=transform_parameters['normalize_mean'],
+        #    std=transform_parameters['normalize_std'],
+        #    max_pixel_value=transform_parameters['normalize_max_pixel_value'],
+        #    always_apply=True
+        #),
+        Scale(always_apply=True),
         ToTensorV2(always_apply=True)
     ])
 
@@ -84,12 +82,13 @@ def get_semantic_segmentation_transforms(**transform_parameters):
             interpolation=cv2.INTER_NEAREST,
             always_apply=True
         ),
-        A.Normalize(
-            mean=transform_parameters['normalize_mean'],
-            std=transform_parameters['normalize_std'],
-            max_pixel_value=transform_parameters['normalize_max_pixel_value'],
-            always_apply=True
-        ),
+        #A.Normalize(
+        #    mean=transform_parameters['normalize_mean'],
+        #    std=transform_parameters['normalize_std'],
+        #    max_pixel_value=transform_parameters['normalize_max_pixel_value'],
+        #    always_apply=True
+        #),
+        Scale(always_apply=True),
         ToTensorV2(always_apply=True)
     ])
 

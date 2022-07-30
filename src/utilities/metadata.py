@@ -5,7 +5,6 @@ from glob import glob
 import json
 import numpy as np
 import pandas as pd
-import cv2
 import tifffile
 
 sys.path.append('..')
@@ -41,7 +40,6 @@ if __name__ == '__main__':
         rle_mask = df_train.loc[df_train['id'] == image_id, 'rle'].values[0]
         mask = annotation_utils.decode_rle_mask(rle_mask=rle_mask, shape=image.shape[:2]).T
         df_train.loc[df_train['id'] == image_id, 'mask_area'] = np.sum(mask)
-        df_train.loc[df_train['id'] == image_id, 'rle'] = annotation_utils.encode_rle_mask(mask)
 
         # Extract metadata from polygons
         polygons = annotation_utils.get_segmentation_polygons_from_json(
@@ -74,7 +72,7 @@ if __name__ == '__main__':
 
         # Extract metadata from mask
         mask = np.load(mask_filename)
-        df_test.loc[df_test['id'] == image_id, 'rle'] = annotation_utils.encode_rle_mask(mask)
+        df_test.loc[df_test['id'] == image_id, 'rle'] = annotation_utils.encode_rle_mask(mask.T)
         df_test.loc[df_test['id'] == image_id, 'mask_area'] = np.sum(mask)
 
         df_test.loc[df_test['id'] == image_id, 'image_filename'] = image_filename

@@ -147,6 +147,7 @@ class SemanticSegmentationTrainer:
             train_dataset = torch_datasets.SemanticSegmentationDataset(
                 image_paths=df_train.loc[train_idx, self.dataset_parameters['inputs']].values,
                 masks=df_train.loc[train_idx, self.dataset_parameters['targets']].values,
+                data_sources=df_train.loc[train_idx, 'data_source'].values,
                 transforms=dataset_transforms['train'],
                 mask_format=self.dataset_parameters['mask_format'],
                 crop_black_border=self.dataset_parameters['crop_black_border'],
@@ -163,6 +164,7 @@ class SemanticSegmentationTrainer:
             val_dataset = torch_datasets.SemanticSegmentationDataset(
                 image_paths=df_train.loc[val_idx, self.dataset_parameters['inputs']].values,
                 masks=df_train.loc[val_idx, self.dataset_parameters['targets']].values,
+                data_sources=df_train.loc[val_idx, 'data_source'].values,
                 transforms=dataset_transforms['val'],
                 mask_format=self.dataset_parameters['mask_format'],
                 crop_black_border=self.dataset_parameters['crop_black_border'],
@@ -259,7 +261,9 @@ class SemanticSegmentationTrainer:
                                 raise ValueError(f'Invalid image format: {image_format}')
 
                             if idx != (df_evaluation.shape[0] - 1):
-                                evaluation_ground_truth_mask = annotation_utils.decode_rle_mask(rle_mask=row['rle'], shape=evaluation_image.shape[:2]).T
+                                evaluation_ground_truth_mask = annotation_utils.decode_rle_mask(rle_mask=row['rle'], shape=evaluation_image.shape[:2])
+                                if row['data_source'] == 'Hubmap' or row['data_source'] == 'HPA':
+                                    evaluation_ground_truth_mask = evaluation_ground_truth_mask.T
                             else:
                                 evaluation_ground_truth_mask = None
                             evaluation_inputs = dataset_transforms['val'](image=evaluation_image)['image'].float()

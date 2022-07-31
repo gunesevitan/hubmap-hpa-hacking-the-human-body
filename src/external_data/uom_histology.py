@@ -8,6 +8,7 @@ import tifffile
 
 sys.path.append('..')
 import settings
+import annotation_utils
 import preprocessing
 
 
@@ -38,6 +39,10 @@ if __name__ == '__main__':
         image_b_mean = np.mean(image[:, :, 2])
         image_b_std = np.std(image[:, :, 2])
 
+        mask = np.load(mask_filename)
+        # Extract metadata from mask
+        mask_area = np.sum(mask)
+
         metadata.append({
             'id': image_id,
             'organ': 'spleen',
@@ -47,7 +52,7 @@ if __name__ == '__main__':
             'image_width': image.shape[1],
             'pixel_size': np.nan,
             'tissue_thickness': np.nan,
-            'rle': np.nan,
+            'rle': annotation_utils.encode_rle_mask(mask),
             'age': np.nan,
             'sex': np.nan,
             'image_r_mean': image_r_mean,
@@ -56,7 +61,7 @@ if __name__ == '__main__':
             'image_g_std': image_g_std,
             'image_b_mean': image_b_mean,
             'image_b_std': image_b_std,
-            'mask_area': np.nan,
+            'mask_area': mask_area,
             'image_filename': image_filename,
             'mask_filename': mask_filename
         })

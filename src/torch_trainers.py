@@ -378,7 +378,11 @@ class SemanticSegmentationTrainer:
             # Set model, loss function, device and seed for reproducible results
             torch_utils.set_seed(self.training_parameters['random_state'], deterministic_cudnn=self.training_parameters['deterministic_cudnn'])
             device = torch.device(self.training_parameters['device'])
-            model = torch_modules.SemanticSegmentationModel(self.model_parameters['model_class'], self.model_parameters['model_args'])
+            model = torch_modules.SemanticSegmentationModel(
+                self.model_parameters['model_module'],
+                self.model_parameters['model_class'],
+                self.model_parameters['model_args']
+            )
             model.load_state_dict(torch.load(model_root_directory / f'model_{fold}.pt'))
             model.to(device)
             model.eval()

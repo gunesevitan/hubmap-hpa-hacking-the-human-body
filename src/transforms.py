@@ -59,6 +59,18 @@ def get_semantic_segmentation_transforms(**transform_parameters):
             hue=transform_parameters['hue'],
             p=transform_parameters['color_jitter_probability']
         ),
+        A.OneOf([
+            A.CLAHE(
+                clip_limit=transform_parameters['clahe_clip_limit'],
+                tile_grid_size=transform_parameters['clahe_tile_grid_size'],
+                p=transform_parameters['clahe_probability']
+            ),
+            A.Equalize(
+                mode='cv',
+                by_channels=True,
+                p=transform_parameters['equalize_probability']
+            )
+        ], p=transform_parameters['histogram_equalization_probability']),
         A.Normalize(
             mean=transform_parameters['normalize_mean'],
             std=transform_parameters['normalize_std'],

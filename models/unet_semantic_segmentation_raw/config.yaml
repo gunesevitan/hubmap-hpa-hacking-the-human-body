@@ -4,7 +4,9 @@ dataset_parameters:
   inputs: image_filename
   targets: rle
   mask_format: rle
-  external_data: []
+  external_data: [
+    HuBMAP_Colonic_Crypt
+  ]
   crop_black_border: False
   crop_background: False
 
@@ -73,8 +75,13 @@ transform_parameters:
   saturation: 0.3
   hue: 0.3
   color_jitter_probability: 0.5
-  normalize_mean: [0.6864609437833393, 0.5534345620480285, 0.7187172954823893]
-  normalize_std: [0.18722252278327903, 0.26679424300841664, 0.16788759187664415]
+  clahe_clip_limit: 4
+  clahe_tile_grid_size: [8, 8]
+  clahe_probability: 0.8
+  equalize_probability: 0.2
+  histogram_equalization_probability: 0.25
+  normalize_mean: [0.8432360616543475, 0.8133245501984746, 0.836754622215923]
+  normalize_std: [0.1618209222130165, 0.2001582185375609, 0.1729689169536699]
   normalize_max_pixel_value: 255
 
 inference_parameters:

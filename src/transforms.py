@@ -71,6 +71,26 @@ def get_semantic_segmentation_transforms(**transform_parameters):
                 p=transform_parameters['equalize_probability']
             )
         ], p=transform_parameters['histogram_equalization_probability']),
+        A.OneOf([
+            A.GridDistortion(
+                num_steps=transform_parameters['grid_distortion_num_steps'],
+                distort_limit=transform_parameters['grid_distortion_distort_limit'],
+                interpolation=cv2.INTER_NEAREST,
+                border_mode=cv2.BORDER_CONSTANT,
+                value=(0, 0, 0),
+                mask_value=(0, 0, 0),
+                p=transform_parameters['grid_distortion_probability']
+            ),
+            A.OpticalDistortion(
+                distort_limit=transform_parameters['optical_distortion_distort_limit'],
+                shift_limit=transform_parameters['optical_distortion_shift_limit'],
+                interpolation=cv2.INTER_NEAREST,
+                border_mode=cv2.BORDER_CONSTANT,
+                value=(0, 0, 0),
+                mask_value=(0, 0, 0),
+                p=transform_parameters['optical_distortion_probability']
+            )
+        ], p=transform_parameters['distortion_probability']),
         A.Normalize(
             mean=transform_parameters['normalize_mean'],
             std=transform_parameters['normalize_std'],

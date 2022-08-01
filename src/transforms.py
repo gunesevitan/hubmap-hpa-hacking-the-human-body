@@ -95,6 +95,32 @@ def get_semantic_segmentation_transforms(**transform_parameters):
                 p=transform_parameters['channel_dropout_probability']
             )
         ], p=transform_parameters['channel_transform_probability']),
+        A.OneOf([
+            A.CoarseDropout(
+                max_holes=transform_parameters['coarse_dropout_max_holes'],
+                max_height=transform_parameters['coarse_dropout_max_height'],
+                max_width=transform_parameters['coarse_dropout_max_width'],
+                min_holes=transform_parameters['coarse_dropout_min_holes'],
+                min_height=transform_parameters['coarse_dropout_min_height'],
+                min_width=transform_parameters['coarse_dropout_min_width'],
+                fill_value=transform_parameters['coarse_dropout_fill_value'],
+                mask_fill_value=transform_parameters['coarse_dropout_mask_fill_value'],
+                p=transform_parameters['coarse_dropout_probability']
+            ),
+            A.PixelDropout(
+                dropout_prob=transform_parameters['pixel_dropout_dropout_probability'],
+                per_channel=transform_parameters['pixel_dropout_per_channel'],
+                drop_value=transform_parameters['pixel_dropout_drop_value'],
+                mask_drop_value=transform_parameters['pixel_dropout_mask_drop_value'],
+                p=transform_parameters['pixel_dropout_probability']
+            ),
+            A.MaskDropout(
+                max_objects=transform_parameters['mask_dropout_max_objects'],
+                image_fill_value=transform_parameters['mask_dropout_image_fill_value'],
+                mask_fill_value=transform_parameters['mask_dropout_mask_fill_value'],
+                p=transform_parameters['mask_dropout_probability']
+            )
+        ], p=transform_parameters['dropout_probability']),
         A.Normalize(
             mean=transform_parameters['normalize_mean'],
             std=transform_parameters['normalize_std'],

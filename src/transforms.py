@@ -41,23 +41,31 @@ def get_semantic_segmentation_transforms(**transform_parameters):
     """
 
     train_transforms = A.Compose([
-        A.RandomResizedCrop(
+        A.Resize(
             height=transform_parameters['resize_height'],
             width=transform_parameters['resize_width'],
-            scale=transform_parameters['resize_scale'],
-            ratio=transform_parameters['resize_ratio'],
             interpolation=cv2.INTER_NEAREST,
             always_apply=True
         ),
         A.HorizontalFlip(p=transform_parameters['horizontal_flip_probability']),
         A.VerticalFlip(p=transform_parameters['vertical_flip_probability']),
         A.RandomRotate90(p=transform_parameters['random_rotate_90_probability']),
-        A.ColorJitter(
-            brightness=transform_parameters['brightness'],
-            contrast=transform_parameters['contrast'],
-            saturation=transform_parameters['saturation'],
-            hue=transform_parameters['hue'],
-            p=transform_parameters['color_jitter_probability']
+        A.ShiftScaleRotate(
+            shift_limit=transform_parameters['shift_limit'],
+            scale_limit=transform_parameters['scale_limit'],
+            rotate_limit=transform_parameters['rotate_limit'],
+            p=transform_parameters['shift_scale_rotate_probability']
+        ),
+        A.HueSaturationValue(
+            hue_shift_limit=transform_parameters['hue_shift_limit'],
+            sat_shift_limit=transform_parameters['saturation_shift_limit'],
+            val_shift_limit=transform_parameters['value_shift_limit'],
+            p=transform_parameters['hue_saturation_value_probability']
+        ),
+        A.RandomBrightnessContrast(
+            brightness_limit=transform_parameters['brightness_limit'],
+            contrast_limit=transform_parameters['contrast_limit'],
+            p=transform_parameters['random_brightness_contrast_probability']
         ),
         A.OneOf([
             A.CLAHE(

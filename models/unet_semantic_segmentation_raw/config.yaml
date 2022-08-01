@@ -78,13 +78,18 @@ transform_parameters:
   clahe_probability: 0.8
   equalize_probability: 0.2
   histogram_equalization_probability: 0.25
-  grid_distortion_num_steps: 5
+  grid_distortion_num_steps: 4
   grid_distortion_distort_limit: 0.3
   grid_distortion_probability: 0.5
   optical_distortion_distort_limit: 0.05
   optical_distortion_shift_limit: 0.05
   optical_distortion_probability: 0.5
   distortion_probability: 0.25
+  channel_shuffle_probability: 0.8
+  channel_dropout_channel_drop_range: [1, 1]
+  channel_dropout_fill_value: 0
+  channel_dropout_probability: 0.2
+  channel_transform_probability: 0.1
   normalize_mean: [0.8461123334500709, 0.8181881670128927, 0.8396328177126106]
   normalize_std: [0.15422885530869604, 0.19460989079464583, 0.16390648194643512]
   normalize_max_pixel_value: 255

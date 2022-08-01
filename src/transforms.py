@@ -76,21 +76,25 @@ def get_semantic_segmentation_transforms(**transform_parameters):
                 num_steps=transform_parameters['grid_distortion_num_steps'],
                 distort_limit=transform_parameters['grid_distortion_distort_limit'],
                 interpolation=cv2.INTER_NEAREST,
-                border_mode=cv2.BORDER_CONSTANT,
-                value=(0, 0, 0),
-                mask_value=(0, 0, 0),
+                border_mode=cv2.BORDER_REPLICATE,
                 p=transform_parameters['grid_distortion_probability']
             ),
             A.OpticalDistortion(
                 distort_limit=transform_parameters['optical_distortion_distort_limit'],
                 shift_limit=transform_parameters['optical_distortion_shift_limit'],
                 interpolation=cv2.INTER_NEAREST,
-                border_mode=cv2.BORDER_CONSTANT,
-                value=(0, 0, 0),
-                mask_value=(0, 0, 0),
+                border_mode=cv2.BORDER_REPLICATE,
                 p=transform_parameters['optical_distortion_probability']
             )
         ], p=transform_parameters['distortion_probability']),
+        A.OneOf([
+            A.ChannelShuffle(p=transform_parameters['channel_shuffle_probability']),
+            A.ChannelDropout(
+                channel_drop_range=transform_parameters['channel_dropout_channel_drop_range'],
+                fill_value=transform_parameters['channel_dropout_fill_value'],
+                p=transform_parameters['channel_dropout_probability']
+            )
+        ], p=transform_parameters['channel_transform_probability']),
         A.Normalize(
             mean=transform_parameters['normalize_mean'],
             std=transform_parameters['normalize_std'],

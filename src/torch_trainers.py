@@ -388,10 +388,12 @@ class SemanticSegmentationTrainer:
             model.to(device)
             model.eval()
 
-            test_time_augmentations = tta.Compose([
-                tta.Scale(scales=[1, 2, 4])
-            ])
-            model = tta.SegmentationTTAWrapper(model, test_time_augmentations, merge_mode='mean')
+            if self.inference_parameters['tta']:
+                test_time_augmentations = tta.Compose([
+                    tta.HorizontalFlip(),
+                    tta.VerticalFlip()
+                ])
+                model = tta.SegmentationTTAWrapper(model, test_time_augmentations, merge_mode='mean')
 
             predictions = []
 

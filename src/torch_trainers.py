@@ -410,7 +410,7 @@ class SemanticSegmentationTrainer:
                 ground_truth_mask = annotation_utils.decode_rle_mask(
                     rle_mask=row['rle'],
                     shape=image.shape[:2]
-                ).T
+                )
                 if row['data_source'] == 'Hubmap' or row['data_source'] == 'HPA':
                     ground_truth_mask = ground_truth_mask.T
 

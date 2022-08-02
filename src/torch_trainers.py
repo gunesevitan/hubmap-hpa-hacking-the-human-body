@@ -9,6 +9,7 @@ import cv2
 import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 import torch.optim as optim
+import ttach as tta
 
 import settings
 import annotation_utils
@@ -386,6 +387,11 @@ class SemanticSegmentationTrainer:
             model.load_state_dict(torch.load(model_root_directory / f'model_{fold}.pt'))
             model.to(device)
             model.eval()
+
+            test_time_augmentations = tta.Compose([
+                tta.HorizontalFlip()
+            ])
+            model = tta.SegmentationTTAWrapper(model, test_time_augmentations, merge_mode='mean')
 
             predictions = []
 

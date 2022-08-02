@@ -389,7 +389,7 @@ class SemanticSegmentationTrainer:
             model.eval()
 
             test_time_augmentations = tta.Compose([
-                tta.HorizontalFlip()
+                tta.Scale(scales=[1, 2, 4])
             ])
             model = tta.SegmentationTTAWrapper(model, test_time_augmentations, merge_mode='mean')
 

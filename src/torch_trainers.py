@@ -406,19 +406,13 @@ class SemanticSegmentationTrainer:
                 image_id = row['id']
                 image = tifffile.imread(row['image_filename'])
 
-                if self.dataset_parameters['mask_format'] == 'rle':
-                    # Decode RLE mask string into 2d binary semantic segmentation mask array
-                    ground_truth_mask = annotation_utils.decode_rle_mask(
-                        rle_mask=row[self.dataset_parameters['target_directory']],
-                        shape=image.shape[:2]
-                    ).T
-                elif self.dataset_parameters['mask_format'] == 'polygon':
-                    # Read polygon JSON file and convert it into 2d binary semantic segmentation mask array
-                    with open(row[self.dataset_parameters['target_directory']], mode='r') as f:
-                        polygons = json.load(f)
-                    ground_truth_mask = annotation_utils.polygon_to_mask(polygons=polygons, shape=image.shape[:2])
-                else:
-                    raise ValueError('Invalid mask format')
+                # Decode RLE mask string into 2d binary semantic segmentation mask array
+                ground_truth_mask = annotation_utils.decode_rle_mask(
+                    rle_mask=row['rle'],
+                    shape=image.shape[:2]
+                ).T
+                if row['data_source'] == 'Hubmap' or row['data_source'] == 'HPA':
+                    ground_truth_mask = ground_truth_mask.T
 
                 # Resize predictions mask back to its original size and evaluate it
                 predictions_mask = cv2.resize(predictions[idx], (image.shape[1], image.shape[0]), interpolation=cv2.INTER_LANCZOS4)

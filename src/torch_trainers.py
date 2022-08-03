@@ -342,8 +342,9 @@ class SemanticSegmentationTrainer:
                 )
                 logging.info(f'Saved learning_curve_{fold}.png to {model_root_directory}')
 
-            if self.training_parameters['swa_start_epoch']:
-                swa_utils.update_bn(train_loader, swa_model)
+            if self.training_parameters['swa_start_epoch'] > 0:
+                # Perform one pass over data to estimate the activation statistics for batch normalization layers in the model
+                swa_utils.update_bn(train_loader, swa_model, device=device)
 
         df_scores = pd.DataFrame(scores)
         for score_idx, row in df_scores.iterrows():

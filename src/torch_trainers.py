@@ -9,6 +9,7 @@ import cv2
 import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 import torch.optim as optim
+from torchcontrib.optim import SWA
 import ttach as tta
 
 import settings
@@ -196,6 +197,13 @@ class SemanticSegmentationTrainer:
             # Set optimizer and learning rate scheduler
             optimizer = getattr(optim, self.training_parameters['optimizer'])(model.parameters(), **self.training_parameters['optimizer_args'])
             scheduler = getattr(optim.lr_scheduler, self.training_parameters['lr_scheduler'])(optimizer, **self.training_parameters['lr_scheduler_args'])
+            if self.training_parameters['swa']:
+                optimizer = SWA(
+                    optimizer=optimizer,
+                    swa_start=self.training_parameters['swa_start'],
+                    swa_freq=self.training_parameters['swa_freq'],
+                    swa_lr=self.training_parameters['swa_lr']
+                )
 
             early_stopping = False
             summary = {

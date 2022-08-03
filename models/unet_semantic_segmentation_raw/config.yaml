@@ -30,7 +30,7 @@ training_parameters:
   loss_args:
     distribution_based_loss_function: SoftBCEWithLogitsLoss
     distribution_based_loss_function_args: {}
-    distribution_based_loss_function_weight: 0.5
+    distribution_based_loss_function_weight: 0.6
     region_based_loss_function: TverskyLoss
     region_based_loss_function_args:
       mode: binary
@@ -40,7 +40,7 @@ training_parameters:
       alpha: 0.5
       beta: 0.5
       gamma: 1.0
-    region_based_loss_function_weight: 0.5
+    region_based_loss_function_weight: 0.4
   optimizer: Adam
   optimizer_args:
     lr: 0.001
@@ -51,6 +51,10 @@ training_parameters:
     step_size: 500
     gamma: 0.5
     last_epoch: -1
+  swa: True
+  swa_start: 1500
+  swa_freq: 1
+  swa_lr: null
   epochs: 250
   early_stopping_patience: 10
   training_batch_size: 4

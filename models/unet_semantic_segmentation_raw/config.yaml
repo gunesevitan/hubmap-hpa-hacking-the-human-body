@@ -51,10 +51,11 @@ training_parameters:
     step_size: 500
     gamma: 0.5
     last_epoch: -1
-  swa: True
-  swa_start: 1500
-  swa_freq: 1
-  swa_lr: null
+  swa_start_epoch: 15
+  swa_lr: 0.05
+  swa_anneal_epochs: 5
+  swa_anneal_strategy: cosine
+
   epochs: 250
   early_stopping_patience: 10
   training_batch_size: 4

@@ -9,7 +9,7 @@ import cv2
 import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 import torch.optim as optim
-from torchcontrib.optim import SWA
+import torch.optim.swa_utils as swa_utils
 import ttach as tta
 
 import settings
@@ -197,13 +197,18 @@ class SemanticSegmentationTrainer:
             # Set optimizer and learning rate scheduler
             optimizer = getattr(optim, self.training_parameters['optimizer'])(model.parameters(), **self.training_parameters['optimizer_args'])
             scheduler = getattr(optim.lr_scheduler, self.training_parameters['lr_scheduler'])(optimizer, **self.training_parameters['lr_scheduler_args'])
-            if self.training_parameters['swa']:
-                optimizer = SWA(
-                    optimizer=optimizer,
-                    swa_start=self.training_parameters['swa_start'],
-                    swa_freq=self.training_parameters['swa_freq'],
-                    swa_lr=self.training_parameters['swa_lr']
+            if self.training_parameters['swa_start_epoch'] > 0:
+                swa_model = swa_utils.AveragedModel(model, device=device)
+                swa_scheduler = swa_utils.SWALR(
+                    optimizer,
+                    swa_lr=self.training_parameters['swa_lr'],
+                    anneal_epochs=self.training_parameters['swa_anneal_epochs'],
+                    anneal_strategy=self.training_parameters['swa_anneal_strategy'],
+                    last_epoch=-1
                 )
+            else:
+                swa_model = None
+                swa_scheduler = None
 
             early_stopping = False
             summary = {
@@ -227,6 +232,11 @@ class SemanticSegmentationTrainer:
                     # Learning rate scheduler works in training function if it is not ReduceLROnPlateau
                     train_loss = self.train(train_loader, model, criterion, optimizer, device, scheduler)
                     val_loss, val_dice_coefficients, val_intersection_over_unions = self.validate(val_loader, model, criterion, device)
+
+                if self.training_parameters['swa_start_epoch'] > 0:
+                    if epoch >= self.training_parameters['swa_start_epoch']:
+                        swa_model.update_parameters(model)
+                        swa_scheduler.step()
 
                 logging.info(
                     f'''
@@ -331,6 +341,9 @@ class SemanticSegmentationTrainer:
                     path=model_root_directory / f'learning_curve_{fold}.png'
                 )
                 logging.info(f'Saved learning_curve_{fold}.png to {model_root_directory}')
+
+            if self.training_parameters['swa_start_epoch']:
+                swa_utils.update_bn(train_loader, swa_model)
 
         df_scores = pd.DataFrame(scores)
         for score_idx, row in df_scores.iterrows():

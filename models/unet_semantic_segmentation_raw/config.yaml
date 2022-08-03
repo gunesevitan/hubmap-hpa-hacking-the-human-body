@@ -54,8 +54,7 @@ training_parameters:
   swa_start_epoch: 15
   swa_lr: 0.05
   swa_anneal_epochs: 5
-  swa_anneal_strategy: cosine
-
+  swa_anneal_strategy: cos
   epochs: 250
   early_stopping_patience: 10
   training_batch_size: 4

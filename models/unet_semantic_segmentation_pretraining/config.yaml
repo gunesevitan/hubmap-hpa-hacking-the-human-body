@@ -1,0 +1,150 @@
+task: semantic_segmentation_pretraining
+
+dataset_parameters:
+  inputs: image_filename
+  targets: rle
+  mask_format: rle
+  hubmap_kidney_segmentation_size: 256
+  crop_black_border: False
+  crop_background: False
+
+model_parameters:
+  model_module: smp
+  model_class: Unet
+  model_args:
+    encoder_name: efficientnet-b6
+    encoder_depth: 5
+    encoder_weights: imagenet
+    decoder_use_batchnorm: True
+    decoder_channels: [256, 128, 64, 32, 16]
+    decoder_attention_type: null
+    in_channels: 3
+    classes: 1
+    activation: null
+    aux_params: null
+  model_checkpoint_path: null
+
+training_parameters:
+  folds: [fold1]
+  loss_function: WeightedSegmentationLoss
+  loss_args:
+    distribution_based_loss_function: SoftBCEWithLogitsLoss
+    distribution_based_loss_function_args: {}
+    distribution_based_loss_function_weight: 0.5
+    region_based_loss_function: TverskyLoss
+    region_based_loss_function_args:
+      mode: binary
+      log_loss: False
+      from_logits: True
+      smooth: 0.0
+      alpha: 0.5
+      beta: 0.5
+      gamma: 1.0
+    region_based_loss_function_weight: 0.5
+  optimizer: AdamW
+  optimizer_args:
+    lr: 0.001
+    betas: [0.9, 0.999]
+    weight_decay: 0.00000001
+  lr_scheduler: StepLR
+  lr_scheduler_args:
+    step_size: 500
+    gamma: 0.5
+    last_epoch: -1
+  swa_start_epoch: 0
+  swa_lr: null
+  swa_anneal_epochs: null
+  swa_anneal_strategy: null
+  epochs: 500
+  early_stopping_patience: 0
+  training_batch_size: 8
+  test_batch_size: 16
+  num_workers: 4
+  random_state: 42
+  deterministic_cudnn: False
+  device: cuda
+
+transform_parameters:
+  resize_height: 256
+  resize_width: 256
+  horizontal_flip_probability: 0.5
+  vertical_flip_probability: 0.5
+  random_rotate_90_probability: 0.25
+  shift_limit: 0.025
+  scale_limit: [-0.1, 0.1]
+  rotate_limit: 45
+  shift_scale_rotate_probability: 0.25
+  hue_shift_limit: 20
+  saturation_shift_limit: 30
+  value_shift_limit: 20
+  hue_saturation_value_probability: 0.25
+  brightness_limit: 0.2
+  contrast_limit: 0.2
+  random_brightness_contrast_probability: 0.25
+  clahe_clip_limit: 4
+  clahe_tile_grid_size: [8, 8]
+  clahe_probability: 0.8
+  equalize_probability: 0.2
+  histogram_equalization_probability: 0.0
+  grid_distortion_num_steps: 4
+  grid_distortion_distort_limit: 0.3
+  grid_distortion_probability: 0.5
+  optical_distortion_distort_limit: 0.03
+  optical_distortion_shift_limit: 0.03
+  optical_distortion_probability: 0.5
+  distortion_probability: 0.0
+  channel_shuffle_probability: 0.5
+  channel_dropout_channel_drop_range: [1, 1]
+  channel_dropout_fill_value: 0
+  channel_dropout_probability: 0.5
+  channel_transform_probability: 0.0
+  coarse_dropout_max_holes: 16
+  coarse_dropout_max_height: 32
+  coarse_dropout_max_width: 32
+  coarse_dropout_min_holes: 2
+  coarse_dropout_min_height: 8
+  coarse_dropout_min_width: 8
+  coarse_dropout_fill_value: 0
+  coarse_dropout_mask_fill_value: 0
+  coarse_dropout_probability: 0.4
+  pixel_dropout_dropout_probability: 0.0
+  pixel_dropout_per_channel: False
+  pixel_dropout_drop_value: 0
+  pixel_dropout_mask_drop_value: 0
+  pixel_dropout_probability: 0.3
+  mask_dropout_max_objects: 2
+  mask_dropout_image_fill_value: 0
+  mask_dropout_mask_fill_value: 0
+  mask_dropout_probability: 0.3
+  dropout_probability: 0.0
+  normalize_mean: [0.6371356749086639, 0.4710428321535752, 0.6819473553301149]
+  normalize_std: [0.15933388317852942, 0.2243649406538118, 0.1407627221148286]
+  normalize_max_pixel_value: 255
+
+inference_parameters:
+  folds: [fold1]
+  tta: False
+  label_threshold_range: [0.5]
+  label_thresholds:
+    hpa:
+      kidney: null
+      prostate: null
+      largeintestine: null
+      spleen: null
+      lung: null
+    hubmap:
+      kidney: 0.5
+      prostate: null
+      largeintestine: null
+      spleen: null
+      lung: null
+
+persistence_parameters:
+  name: unet_semantic_segmentation_pretraining
+  visualize_epoch_predictions: False
+  visualize_final_predictions: False
+  evaluate_final_predictions: False
+  visualize_learning_curve: True
+  visualize_training_scores: True
+  save_best_model: True
+  save_epoch_model: [5, 10, 25, 50, 100, 250, 500]

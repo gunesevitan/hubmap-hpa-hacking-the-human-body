@@ -194,7 +194,7 @@ class SemanticSegmentationTrainer:
                 model.load_state_dict(torch.load(self.model_parameters['model_checkpoint_path']))
             model.to(device)
 
-            # Set optimizer and learning rate scheduler
+            # Set optimizer, learning rate scheduler and stochastic weight averaging
             optimizer = getattr(optim, self.training_parameters['optimizer'])(model.parameters(), **self.training_parameters['optimizer_args'])
             scheduler = getattr(optim.lr_scheduler, self.training_parameters['lr_scheduler'])(optimizer, **self.training_parameters['lr_scheduler_args'])
             if self.training_parameters['swa_start_epoch'] > 0:
@@ -245,12 +245,18 @@ class SemanticSegmentationTrainer:
                     Intersection over Unions: {val_intersection_over_unions[0]} (Mean Intersection over Union {val_intersection_over_unions[1]:.4f})
                     '''
                 )
+
+                if epoch in self.persistence_parameters['save_epoch_model']:
+                    # Save model if current epoch is specified to be saved
+                    torch.save(model.state_dict(), model_root_directory / f'model_{fold}_epoch_{epoch}.pt')
+                    logging.info(f'Saved model_{fold}_epoch_{epoch}.pt to {model_root_directory}')
+
                 best_val_loss = np.min(summary['val_loss']) if len(summary['val_loss']) > 0 else np.inf
                 if val_loss < best_val_loss:
                     # Save model if validation loss improves
-                    if self.persistence_parameters['save_models']:
-                        torch.save(model.state_dict(), model_root_directory / f'model_{fold}.pt')
-                        logging.info(f'Saved model_{fold}.pt to {model_root_directory} (validation loss decreased from {best_val_loss:.6f} to {val_loss:.6f})')
+                    if self.persistence_parameters['save_best_model']:
+                        torch.save(model.state_dict(), model_root_directory / f'model_{fold}_best.pt')
+                        logging.info(f'Saved model_{fold}_best.pt to {model_root_directory} (validation loss decreased from {best_val_loss:.6f} to {val_loss:.6f})')
 
                     # Save epoch predictions visualizations if validation loss improves
                     if self.persistence_parameters['visualize_epoch_predictions']:
@@ -285,6 +291,7 @@ class SemanticSegmentationTrainer:
                                     evaluation_ground_truth_mask = evaluation_ground_truth_mask.T
                             else:
                                 evaluation_ground_truth_mask = None
+
                             evaluation_inputs = dataset_transforms['val'](image=evaluation_image)['image'].float()
                             evaluation_inputs = evaluation_inputs.to(device)
 
@@ -293,16 +300,16 @@ class SemanticSegmentationTrainer:
 
                             evaluation_predictions_mask = torch.sigmoid(torch.squeeze(torch.squeeze(evaluation_outputs.detach().cpu(), dim=0), dim=0)).numpy().astype(np.float32)
                             # Resize evaluation predictions mask back to its original size and evaluate it on multiple thresholds
-                            evaluation_predictions_mask = cv2.resize(evaluation_predictions_mask, (evaluation_image.shape[1], evaluation_image.shape[0]), interpolation=cv2.INTER_LANCZOS4)
+                            evaluation_predictions_mask = cv2.resize(evaluation_predictions_mask, (evaluation_image.shape[1], evaluation_image.shape[0]), interpolation=cv2.INTER_CUBIC)
                             evaluation_summary = evaluation.evaluate_predictions(
                                 ground_truth=evaluation_ground_truth_mask,
                                 predictions=evaluation_predictions_mask,
-                                threshold=self.inference_parameters['label_thresholds'][row['organ']],
+                                threshold=self.inference_parameters['label_thresholds'][row['data_source']][row['organ']],
                                 thresholds=self.inference_parameters['label_threshold_range']
                             )
 
                             # Convert evaluation predictions mask's soft predictions to labels and visualize it
-                            evaluation_predictions_mask = metrics.soft_predictions_to_labels(x=evaluation_predictions_mask, threshold=self.inference_parameters['label_thresholds'][row['organ']])
+                            evaluation_predictions_mask = metrics.soft_predictions_to_labels(x=evaluation_predictions_mask, threshold=self.inference_parameters['label_thresholds'][row['data_source']][row['organ']])
                             visualization.visualize_predictions(
                                 image=evaluation_image,
                                 ground_truth=evaluation_ground_truth_mask,
@@ -320,19 +327,28 @@ class SemanticSegmentationTrainer:
                 summary['val_intersection_over_union'].append(np.median(list(val_intersection_over_unions[0].values())))
 
                 best_epoch = np.argmin(summary['val_loss'])
-                if len(summary['val_loss']) - best_epoch >= self.training_parameters['early_stopping_patience']:
-                    logging.info(
-                        f'''
-                        Early Stopping (validation loss didn\'t improve for {self.training_parameters["early_stopping_patience"]} epochs)
-                        Best Epoch ({best_epoch + 1}) Validation Loss: {summary["val_loss"][best_epoch]:.6f} Dice Coefficient: {summary["val_dice_coefficient"][best_epoch]:.4f}  Intersection over Union: {summary["val_intersection_over_union"][best_epoch]:.4f}
-                        '''
-                    )
-                    early_stopping = True
-                    scores.append({
-                        'val_loss': summary['val_loss'][best_epoch],
-                        'val_dice_coefficient': summary['val_dice_coefficient'][best_epoch],
-                        'val_intersection_over_union': summary['val_intersection_over_union'][best_epoch]
-                    })
+                if self.training_parameters['early_stopping_patience'] > 0:
+                    # Trigger early stopping if early stopping patience is greater than 0
+                    if len(summary['val_loss']) - best_epoch >= self.training_parameters['early_stopping_patience']:
+                        logging.info(
+                            f'''
+                            Early Stopping (validation loss didn\'t improve for {self.training_parameters["early_stopping_patience"]} epochs)
+                            Best Epoch ({best_epoch + 1}) Validation Loss: {summary["val_loss"][best_epoch]:.6f} Dice Coefficient: {summary["val_dice_coefficient"][best_epoch]:.4f}  Intersection over Union: {summary["val_intersection_over_union"][best_epoch]:.4f}
+                            '''
+                        )
+                        early_stopping = True
+                        scores.append({
+                            'val_loss': summary['val_loss'][best_epoch],
+                            'val_dice_coefficient': summary['val_dice_coefficient'][best_epoch],
+                            'val_intersection_over_union': summary['val_intersection_over_union'][best_epoch]
+                        })
+                else:
+                    if epoch == self.training_parameters['epochs']:
+                        scores.append({
+                            'val_loss': summary['val_loss'][-1],
+                            'val_dice_coefficient': summary['val_dice_coefficient'][-1],
+                            'val_intersection_over_union': summary['val_intersection_over_union'][-1]
+                        })
 
             if self.persistence_parameters['visualize_learning_curve']:
                 visualization.visualize_learning_curve(

@@ -422,7 +422,7 @@ class SemanticSegmentationTrainer:
                 self.model_parameters['model_class'],
                 self.model_parameters['model_args']
             )
-            model.load_state_dict(torch.load(model_root_directory / f'model_{fold}.pt'))
+            model.load_state_dict(torch.load(model_root_directory / f'model_{fold}_best.pt'))
             model.to(device)
             model.eval()
 

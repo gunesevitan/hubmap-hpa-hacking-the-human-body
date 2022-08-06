@@ -475,7 +475,7 @@ class SemanticSegmentationTrainer:
                 df_train.loc[df_train['id'] == image_id, 'dice_coefficient'] = predictions_evaluation_summary['scores']['dice_coefficient']
                 df_train.loc[df_train['id'] == image_id, 'intersection_over_union'] = predictions_evaluation_summary['scores']['intersection_over_union']
 
-                predictions_mask = np.uint8(predictions_mask >= self.inference_parameters['label_thresholds'][row['organ']])
+                predictions_mask = np.uint8(predictions_mask >= self.inference_parameters['label_thresholds'][row['data_source']][row['organ']])
 
                 if self.persistence_parameters['visualize_final_predictions']:
                     visualization.visualize_predictions(

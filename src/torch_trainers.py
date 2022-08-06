@@ -465,7 +465,7 @@ class SemanticSegmentationTrainer:
                 predictions_evaluation_summary = evaluation.evaluate_predictions(
                     ground_truth=ground_truth_mask,
                     predictions=predictions_mask,
-                    threshold=self.inference_parameters['label_thresholds'][row['organ']],
+                    threshold=self.inference_parameters['label_thresholds'][row['data_source']][row['organ']],
                     thresholds=self.inference_parameters['label_threshold_range'])
 
                 if self.persistence_parameters['evaluate_final_predictions']:

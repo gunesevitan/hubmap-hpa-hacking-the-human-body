@@ -162,7 +162,7 @@ if __name__ == '__main__':
             stitched_image = np.hstack([np.vstack([image_tiles[f'{column}_{row}'] for row in range(image_tile_dimension)]) for column in range(image_tile_dimension)])
             cv2.imwrite(str(dataset_path / 'images' / f'{organ}_he.png'), stitched_image)
 
-    image_filenames = sorted(glob(str(dataset_path / 'images' / '*.png')))
+    image_filenames = sorted(glob(str(dataset_path / 'images' / '*.png'))) + sorted(glob(str(dataset_path / 'images' / '*.jpg')))
 
     metadata = []
 
@@ -193,8 +193,8 @@ if __name__ == '__main__':
         metadata.append({
             'id': image_id,
             'organ': '_'.join(image_id.split('_')[:-1]),
-            'data_source': 'HPA_Dictionary',
-            'stain': 'H&E',
+            'data_source': 'HPA',
+            'stain': 'H&E' if image_filename.split('.')[-1] == 'png' else 'DAB&H',
             'image_height': image.shape[0],
             'image_width': image.shape[1],
             'pixel_size': np.nan,

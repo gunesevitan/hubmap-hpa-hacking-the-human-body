@@ -11,7 +11,6 @@ import albumentations as A
 
 import settings
 import annotation_utils
-import preprocessing
 
 
 def visualize_categorical_feature_distribution(df, categorical_feature, path=None):
@@ -52,7 +51,7 @@ def visualize_categorical_feature_distribution(df, categorical_feature, path=Non
         plt.close(fig)
 
 
-def visualize_annotations(image, rle_mask, polygons, metadata, crop_black_border=False, crop_background=False, path=None):
+def visualize_annotations(image, rle_mask, polygons, metadata, path=None):
 
     """
     Visualize image along with its annotations
@@ -63,8 +62,6 @@ def visualize_annotations(image, rle_mask, polygons, metadata, crop_black_border
     rle_mask (str): Run-length encoded segmentation mask string
     polygons (list of shape (n_polygons, n_points, 2)): Polygons
     metadata (dict): Dictionary of metadata used in the visualization title
-    crop_black_border (bool): Whether to crop black border or not
-    crop_background (bool): Whether to crop background or not
     path (path-like str or None): Path of the output file or None (if path is None, plot is displayed with selected backend)
     """
 
@@ -84,13 +81,6 @@ def visualize_annotations(image, rle_mask, polygons, metadata, crop_black_border
         mask = annotation_utils.decode_rle_mask(rle_mask=rle_mask, shape=image.shape[:2])
         if metadata['data_source'] == 'HPA' or metadata['data_source'] == 'Hubmap':
             mask = mask.T
-
-    image, mask = preprocessing.crop_image(
-        image=image,
-        mask=mask,
-        crop_black_border=crop_black_border,
-        crop_background=crop_background
-    )
 
     fig, axes = plt.subplots(figsize=(48, 20), ncols=3)
 
@@ -120,10 +110,11 @@ def visualize_annotations(image, rle_mask, polygons, metadata, crop_black_border
     fig.suptitle(
         f'''
         Image ID {metadata["id"]} - {metadata["organ"]} - {metadata["data_source"]} - {metadata["age"]} - {metadata["sex"]}
-        Image Shape: {metadata["image_height"]}x{metadata["image_width"]} - Pixel Size: {metadata["pixel_size"]}µm - Tissue Thickness: {metadata["tissue_thickness"]}µm
+        Image Shape: {metadata["image_height"]}x{metadata["image_width"]} - Pixel Size: {metadata["pixel_size"]} µm - Tissue Thickness: {metadata["tissue_thickness"]} µm
         {metadata["n_polygons"]} Annotations'
         ''',
-        fontsize=25
+        fontsize=25,
+        y=1.025
     )
 
     if path is None:
@@ -177,15 +168,16 @@ def visualize_predictions(image, ground_truth, predictions, metadata, evaluation
         axes[i].tick_params(axis='x', labelsize=15, pad=10)
         axes[i].tick_params(axis='y', labelsize=15, pad=10)
 
-    axes[0].set_title('Image + Ground-truth\n' + ground_truth_evaluation, size=25, pad=15)
-    axes[1].set_title('Image + Predictions\n' + predictions_evaluation, size=25, pad=15)
+    axes[0].set_title('Image + Ground-truth\n' + ground_truth_evaluation, size=20, pad=15)
+    axes[1].set_title('Image + Predictions\n' + predictions_evaluation, size=20, pad=15)
     fig.suptitle(
         f'''
-        Image ID {metadata["id"]} - {metadata["organ"]} - {metadata["data_source"]} - {int(metadata["age"])} - {metadata["sex"]}
-        Image Shape: {metadata["image_height"]}x{metadata["image_width"]} - Pixel Size: {metadata["pixel_size"]}µm - Tissue Thickness: {metadata["tissue_thickness"]}µm
+        Image ID {metadata["id"]} - {metadata["organ"]} - {metadata["data_source"]} - {metadata["age"]} - {metadata["sex"]}
+        Image Shape: {metadata["image_height"]}x{metadata["image_width"]} - Pixel Size: {metadata["pixel_size"]} µm - Tissue Thickness: {metadata["tissue_thickness"]} µm
         Dice Coefficient: {dice_coefficient} - Intersection over Union: {intersection_over_union}
         ''',
-        fontsize=30
+        fontsize=25,
+        y=1.025
     )
 
     if path is None:
@@ -356,8 +348,6 @@ if __name__ == '__main__':
                 rle_mask=rle_mask,
                 polygons=None,
                 metadata=row.to_dict(),
-                crop_black_border=True,
-                crop_background=True,
                 path=annotations_visualizations_directory / f'{row["id"]}_annotations.png'
             )
 
@@ -365,7 +355,7 @@ if __name__ == '__main__':
 
     if VISUALIZE_CATEGORICAL_FEATURES:
 
-        df_train['image_dimensions'] = df_train['img_height'].astype(str) + 'x' + df_train['img_width'].astype(str)
+        df_train['image_dimensions'] = df_train['image_height'].astype(str) + 'x' + df_train['image_width'].astype(str)
 
         categorical_features = ['organ', 'image_dimensions']
         for categorical_feature in categorical_features:
@@ -418,26 +408,3 @@ if __name__ == '__main__':
             mask=mask,
             transforms=transforms
         )
-
-    df_hubmap_kidney_segmentation_metadata = pd.read_csv(settings.DATA / 'hubmap_kidney_segmentation_metadata.csv')
-    df_hubmap_kidney_segmentation_metadata = df_hubmap_kidney_segmentation_metadata.loc[df_hubmap_kidney_segmentation_metadata['mask_area'] > 5000].reset_index(drop=True)
-
-
-    print(df_hubmap_kidney_segmentation_metadata.shape, df_hubmap_kidney_segmentation_metadata['mask_area'].mean(), df_hubmap_kidney_segmentation_metadata['mask_area'].min(), df_hubmap_kidney_segmentation_metadata['mask_area'].max())
-    idx = np.argmin(df_hubmap_kidney_segmentation_metadata['mask_area'].values)
-    image = cv2.imread(df_hubmap_kidney_segmentation_metadata.loc[idx, 'image_filename'])
-    mask = cv2.imread(df_hubmap_kidney_segmentation_metadata.loc[idx, 'mask_filename'], -1)
-
-
-    plt.imshow(image)
-    plt.imshow(mask, alpha=0.5)
-    plt.show()
-
-    idx = np.argmax(df_hubmap_kidney_segmentation_metadata['mask_area'].values)
-    image = cv2.imread(df_hubmap_kidney_segmentation_metadata.loc[idx, 'image_filename'], -1)
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    mask = cv2.imread(df_hubmap_kidney_segmentation_metadata.loc[idx, 'mask_filename'], -1)
-
-    plt.imshow(image)
-    #plt.imshow(mask, alpha=0.5)
-    plt.show()

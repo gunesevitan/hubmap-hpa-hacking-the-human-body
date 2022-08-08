@@ -154,5 +154,15 @@ def get_semantic_segmentation_transforms(**transform_parameters):
         ToTensorV2(always_apply=True)
     ])
 
-    transforms = {'train': train_transforms, 'val': val_transforms}
+    test_transforms = A.Compose([
+        A.Normalize(
+            mean=transform_parameters['normalize_mean'],
+            std=transform_parameters['normalize_std'],
+            max_pixel_value=transform_parameters['normalize_max_pixel_value'],
+            always_apply=True
+        ),
+        ToTensorV2(always_apply=True)
+    ])
+
+    transforms = {'train': train_transforms, 'val': val_transforms, 'test': test_transforms}
     return transforms

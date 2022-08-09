@@ -38,12 +38,13 @@ class SemanticSegmentationDataset(Dataset):
         mask (torch.FloatTensor of shape (1, height, width)): Mask tensor
         """
 
+        data_source = self.data_sources[idx]
+
         image_format = self.image_paths[idx].split('/')[-1].split('.')[-1]
-        if image_format == 'tiff':
+        if data_source == 'HPA' or data_source == 'Hubmap':
             image = tifffile.imread(str(self.image_paths[idx]))
-        elif image_format == 'png':
+        elif data_source == 'GTEx':
             image = cv2.imread(str(self.image_paths[idx]))
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         else:
             raise ValueError(f'Invalid image format: {image_format}')
 
@@ -52,7 +53,6 @@ class SemanticSegmentationDataset(Dataset):
             if self.mask_format == 'rle':
                 # Decode RLE mask string into 2d binary semantic segmentation mask array
                 mask = annotation_utils.decode_rle_mask(rle_mask=self.masks[idx], shape=image.shape[:2])
-                data_source = self.data_sources[idx]
                 # Transpose raw HPA and HuBMAP masks
                 if data_source == 'Hubmap' or data_source == 'HPA':
                     mask = mask.T

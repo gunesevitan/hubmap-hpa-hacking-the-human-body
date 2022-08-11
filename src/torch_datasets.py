@@ -90,7 +90,7 @@ class SemanticSegmentationDataset(Dataset):
                     target_pixel_size = imaging_measurements[data_source]['pixel_size'][organ]
                     pixel_size_scale_factor = domain_pixel_size / target_pixel_size
 
-                    image = cv2.resize(image, fx=pixel_size_scale_factor, fy=pixel_size_scale_factor, interpolation=cv2.INTER_LINEAR)
+                    image = cv2.resize(image, dsize=None, fx=pixel_size_scale_factor, fy=pixel_size_scale_factor, interpolation=cv2.INTER_LINEAR)
                     image = cv2.resize(image, dsize=(image.shape[1], image.shape[0]), interpolation=cv2.INTER_LINEAR)
 
         if self.masks is not None:

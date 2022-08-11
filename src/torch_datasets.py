@@ -1,24 +1,58 @@
-import json
+import numpy as np
 import cv2
 import tifffile
 import torch
 from torch.utils.data import Dataset
 
 import annotation_utils
-import preprocessing
+
+
+imaging_measurements = {
+  'HPA': {
+    'pixel_size': {
+      'kidney': 0.4,
+      'prostate': 0.4,
+      'largeintestine': 0.4,
+      'spleen': 0.4,
+      'lung': 0.4
+    },
+    'tissue_thickness': {
+      'kidney': 4,
+      'prostate': 4,
+      'largeintestine': 4,
+      'spleen': 4,
+      'lung': 4
+    }
+  },
+  'Hubmap': {
+    'pixel_size': {
+      'kidney': 0.5,
+      'prostate': 6.263,
+      'largeintestine': 0.229,
+      'spleen': 0.4945,
+      'lung': 0.7562
+    },
+    'tissue_thickness': {
+      'kidney': 10,
+      'prostate': 5,
+      'largeintestine': 8,
+      'spleen': 4,
+      'lung': 5
+    }
+  }
+}
 
 
 class SemanticSegmentationDataset(Dataset):
 
-    def __init__(self, image_paths, masks=None, data_sources=None, transforms=None, mask_format='rle', crop_black_border=False, crop_background=False):
+    def __init__(self, image_paths, organs, data_sources, masks=None, imaging_measurement_adaptation_probability=0, transforms=None):
 
         self.image_paths = image_paths
-        self.masks = masks
+        self.organs = organs
         self.data_sources = data_sources
+        self.masks = masks
+        self.imaging_measurement_adaptation_probability = imaging_measurement_adaptation_probability
         self.transforms = transforms
-        self.mask_format = mask_format
-        self.crop_black_border = crop_black_border
-        self.crop_background = crop_background
 
     def __len__(self):
         return len(self.image_paths)
@@ -38,40 +72,33 @@ class SemanticSegmentationDataset(Dataset):
         mask (torch.FloatTensor of shape (1, height, width)): Mask tensor
         """
 
+        organ = self.organs[idx]
         data_source = self.data_sources[idx]
 
-        image_format = self.image_paths[idx].split('/')[-1].split('.')[-1]
         if data_source == 'HPA' or data_source == 'Hubmap':
             image = tifffile.imread(str(self.image_paths[idx]))
         elif data_source == 'GTEx':
             image = cv2.imread(str(self.image_paths[idx]))
         else:
-            raise ValueError(f'Invalid image format: {image_format}')
+            raise ValueError(f'Invalid data source: {data_source}')
+
+        if data_source == 'HPA':
+            if self.imaging_measurement_adaptation_probability > 0:
+                if np.random.rand() < self.imaging_measurement_adaptation_probability:
+                    # Simulate pixel size artifacts in HPA images randomly
+                    domain_pixel_size = imaging_measurements[data_source]['pixel_size'][organ]
+                    target_pixel_size = imaging_measurements[data_source]['pixel_size'][organ]
+                    pixel_size_scale_factor = domain_pixel_size / target_pixel_size
+
+                    image = cv2.resize(image, fx=pixel_size_scale_factor, fy=pixel_size_scale_factor, interpolation=cv2.INTER_LINEAR)
+                    image = cv2.resize(image, dsize=(image.shape[1], image.shape[0]), interpolation=cv2.INTER_LINEAR)
 
         if self.masks is not None:
 
-            if self.mask_format == 'rle':
-                # Decode RLE mask string into 2d binary semantic segmentation mask array
-                mask = annotation_utils.decode_rle_mask(rle_mask=self.masks[idx], shape=image.shape[:2])
-                # Transpose raw HPA and HuBMAP masks
-                if data_source == 'Hubmap' or data_source == 'HPA':
-                    mask = mask.T
-            elif self.mask_format == 'polygon':
-                # Read polygon JSON file and convert it into 2d binary semantic segmentation mask array
-                with open(self.masks[idx], mode='r') as f:
-                    polygons = json.load(f)
-                mask = annotation_utils.polygon_to_mask(polygons=polygons, shape=image.shape[:2])
-            else:
-                raise ValueError(f'Invalid mask format: {self.mask_format}')
-
-            if self.crop_black_border or self.crop_background:
-                # Crop black border or background from the image and mask
-                image, mask = preprocessing.crop_image(
-                    image=image,
-                    mask=mask,
-                    crop_black_border=self.crop_black_border,
-                    crop_background=self.crop_background
-                )
+            # Decode RLE mask string into 2d binary semantic segmentation mask array
+            mask = annotation_utils.decode_rle_mask(rle_mask=self.masks[idx], shape=image.shape[:2])
+            if data_source == 'Hubmap' or data_source == 'HPA':
+                mask = mask.T
 
             if self.transforms is not None:
                 # Apply transforms to image and semantic segmentation mask
@@ -90,15 +117,6 @@ class SemanticSegmentationDataset(Dataset):
             return image, mask
 
         else:
-
-            if self.crop_black_border or self.crop_background:
-                # Crop black border or background from the image
-                image, mask = preprocessing.crop_image(
-                    image=image,
-                    mask=None,
-                    crop_black_border=self.crop_black_border,
-                    crop_background=self.crop_background
-                )
 
             if self.transforms is not None:
                 # Apply transforms to image

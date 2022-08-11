@@ -276,9 +276,9 @@ class SemanticSegmentationTrainer:
                         for idx, row in df_evaluation.iterrows():
 
                             if row['data_source'] == 'HPA' or row['data_source'] == 'Hubmap':
-                                evaluation_image = tifffile.imread(str(self.image_paths[idx]))
+                                evaluation_image = tifffile.imread(row['image_filename'])
                             elif row['data_source'] == 'GTEx':
-                                evaluation_image = cv2.imread(str(self.image_paths[idx]))
+                                evaluation_image = cv2.imread(row['image_filename'])
                             else:
                                 raise ValueError(f'Invalid data source: {row["data_source"]}')
 

@@ -21,6 +21,7 @@ import torch_modules
 import torch_utils
 import metrics
 import evaluation
+import test_time_augmentations
 
 
 class SemanticSegmentationTrainer:
@@ -148,12 +149,11 @@ class SemanticSegmentationTrainer:
             logging.info(f'\n{fold} - Training: {len(train_idx)} ({len(train_idx) // self.training_parameters["training_batch_size"] + 1} steps) - Validation {len(val_idx)} ({len(val_idx) // self.training_parameters["test_batch_size"] + 1} steps)')
             train_dataset = torch_datasets.SemanticSegmentationDataset(
                 image_paths=df_train.loc[train_idx, self.dataset_parameters['inputs']].values,
-                masks=df_train.loc[train_idx, self.dataset_parameters['targets']].values,
+                organs=df_train.loc[train_idx, 'organ'].values,
                 data_sources=df_train.loc[train_idx, 'data_source'].values,
+                masks=df_train.loc[train_idx, self.dataset_parameters['targets']].values,
                 transforms=dataset_transforms['train'],
-                mask_format=self.dataset_parameters['mask_format'],
-                crop_black_border=self.dataset_parameters['crop_black_border'],
-                crop_background=self.dataset_parameters['crop_background']
+                imaging_measurement_adaptation_probability=self.transform_parameters['imaging_measurement_adaptation_probability']
             )
             train_loader = DataLoader(
                 train_dataset,
@@ -165,12 +165,11 @@ class SemanticSegmentationTrainer:
             )
             val_dataset = torch_datasets.SemanticSegmentationDataset(
                 image_paths=df_train.loc[val_idx, self.dataset_parameters['inputs']].values,
-                masks=df_train.loc[val_idx, self.dataset_parameters['targets']].values,
+                organs=df_train.loc[val_idx, 'organ'].values,
                 data_sources=df_train.loc[val_idx, 'data_source'].values,
+                masks=df_train.loc[train_idx, self.dataset_parameters['targets']].values,
                 transforms=dataset_transforms['val'],
-                mask_format=self.dataset_parameters['mask_format'],
-                crop_black_border=self.dataset_parameters['crop_black_border'],
-                crop_background=self.dataset_parameters['crop_background']
+                imaging_measurement_adaptation_probability=0
             )
             val_loader = DataLoader(
                 val_dataset,
@@ -276,14 +275,12 @@ class SemanticSegmentationTrainer:
 
                         for idx, row in df_evaluation.iterrows():
 
-                            image_format = row['image_filename'].split('/')[-1].split('.')[-1]
-                            if image_format == 'tiff':
-                                evaluation_image = tifffile.imread(row['image_filename'])
-                            elif image_format == 'png':
-                                evaluation_image = cv2.imread(row['image_filename'])
-                                evaluation_image = cv2.cvtColor(evaluation_image, cv2.COLOR_BGR2RGB)
+                            if row['data_source'] == 'HPA' or row['data_source'] == 'Hubmap':
+                                evaluation_image = tifffile.imread(str(self.image_paths[idx]))
+                            elif row['data_source'] == 'GTEx':
+                                evaluation_image = cv2.imread(str(self.image_paths[idx]))
                             else:
-                                raise ValueError(f'Invalid image format: {image_format}')
+                                raise ValueError(f'Invalid data source: {row["data_source"]}')
 
                             if idx != (df_evaluation.shape[0] - 1):
                                 evaluation_ground_truth_mask = annotation_utils.decode_rle_mask(rle_mask=row['rle'], shape=evaluation_image.shape[:2])
@@ -399,20 +396,6 @@ class SemanticSegmentationTrainer:
 
             val_idx = df_train.loc[df_train[fold] == 1].index
             logging.info(f'\n{fold}  - Validation {len(val_idx)} ({len(val_idx) // self.training_parameters["test_batch_size"] + 1} steps)')
-            val_dataset = torch_datasets.SemanticSegmentationDataset(
-                image_paths=df_train.loc[val_idx, 'image_filename'].values,
-                masks=None,
-                transforms=dataset_transforms['val'],
-                mask_format=None
-            )
-            val_loader = DataLoader(
-                val_dataset,
-                batch_size=self.training_parameters['test_batch_size'],
-                sampler=SequentialSampler(val_dataset),
-                pin_memory=False,
-                drop_last=False,
-                num_workers=self.training_parameters['num_workers']
-            )
 
             # Set model, loss function, device and seed for reproducible results
             torch_utils.set_seed(self.training_parameters['random_state'], deterministic_cudnn=self.training_parameters['deterministic_cudnn'])
@@ -426,42 +409,58 @@ class SemanticSegmentationTrainer:
             model.to(device)
             model.eval()
 
-            if self.inference_parameters['tta']:
-                test_time_augmentations = tta.Compose([
-                    tta.HorizontalFlip(),
-                    tta.VerticalFlip()
-                ])
-                model = tta.SegmentationTTAWrapper(model, test_time_augmentations, merge_mode='mean')
+            for idx, row in tqdm(df_train.loc[val_idx, :].iterrows(), total=len(val_idx)):
 
-            predictions = []
+                if row['data_source'] == 'HPA' or row['data_source'] == 'Hubmap':
+                    image = tifffile.imread(row['image_filename'])
+                elif row['data_source'] == 'GTEx':
+                    image = cv2.imread(row['image_filename'])
+                else:
+                    raise ValueError(f'Invalid data source: {row["data_source"]}')
 
-            for inputs in tqdm(val_loader):
-                inputs = inputs.to(device)
+                image_resized = cv2.resize(
+                    image,
+                    dsize=self.inference_parameters['size'][row['data_source']][row['organ']],
+                    interpolation=cv2.INTER_CUBIC
+                )
+
+                if self.inference_parameters['tta']:
+                    # Stack augmented images on batch dimension
+                    inputs = [
+                        image_resized,
+                        test_time_augmentations.horizontal_flip(image_resized),
+                        test_time_augmentations.vertical_flip(image_resized),
+                        test_time_augmentations.horizontal_flip(test_time_augmentations.vertical_flip(image_resized))
+                    ]
+                    inputs = torch.cat([
+                        torch.unsqueeze(dataset_transforms['test'](image=image)['image'], dim=0)
+                        for image in inputs
+                    ], dim=0)
+                else:
+                    inputs = torch.unsqueeze(dataset_transforms['test'](image=image_resized)['image'], dim=0)
+
+                inputs = inputs.to('cuda')
+
                 with torch.no_grad():
                     outputs = model(inputs)
-                predictions += [(outputs.detach().cpu())]
 
-            del val_dataset, val_loader, model
+                predictions_mask = outputs.detach().cpu()
+                predictions_mask = torch.sigmoid(torch.squeeze(predictions_mask, dim=1)).numpy().astype(np.float32)
 
-            # Concatenate predictions tensor and remove channel dimension from it
-            # Apply sigmoid function to logits predictions and convert it numpy array
-            predictions = torch.sigmoid(torch.squeeze(torch.cat(predictions, dim=0), dim=1)).numpy().astype(np.float32)
-
-            for idx, row in tqdm(df_train.loc[val_idx, :].reset_index(drop=True).iterrows(), total=len(val_idx)):
-
-                image_id = row['id']
-                image = tifffile.imread(row['image_filename'])
+                if self.inference_parameters['tta']:
+                    # Apply inverse of test-time augmentations and aggregate predictions
+                    predictions_mask[1, :, :] = test_time_augmentations.horizontal_flip(predictions_mask[1, :, :])
+                    predictions_mask[2, :, :] = test_time_augmentations.vertical_flip(predictions_mask[2, :, :])
+                    predictions_mask[3, :, :] = test_time_augmentations.horizontal_flip(test_time_augmentations.vertical_flip(predictions_mask[3, :, :]))
+                    predictions_mask = np.mean(predictions_mask, axis=0)
 
                 # Decode RLE mask string into 2d binary semantic segmentation mask array
-                ground_truth_mask = annotation_utils.decode_rle_mask(
-                    rle_mask=row['rle'],
-                    shape=image.shape[:2]
-                )
+                ground_truth_mask = annotation_utils.decode_rle_mask(rle_mask=row['rle'], shape=image.shape[:2])
                 if row['data_source'] == 'Hubmap' or row['data_source'] == 'HPA':
                     ground_truth_mask = ground_truth_mask.T
 
                 # Resize predictions mask back to its original size and evaluate it
-                predictions_mask = cv2.resize(predictions[idx], (image.shape[1], image.shape[0]), interpolation=cv2.INTER_LANCZOS4)
+                predictions_mask = cv2.resize(predictions_mask, (image.shape[1], image.shape[0]), interpolation=cv2.INTER_CUBIC)
                 predictions_evaluation_summary = evaluation.evaluate_predictions(
                     ground_truth=ground_truth_mask,
                     predictions=predictions_mask,
@@ -469,13 +468,20 @@ class SemanticSegmentationTrainer:
                     thresholds=self.inference_parameters['label_threshold_range'])
 
                 if self.persistence_parameters['evaluate_final_predictions']:
-                    with open(final_predictions_directory / f'{image_id}_evaluation.json', mode='w') as f:
+                    with open(final_predictions_directory / f'{row["id"]}_evaluation.json', mode='w') as f:
                         json.dump(predictions_evaluation_summary, f, indent=2)
 
-                df_train.loc[df_train['id'] == image_id, 'dice_coefficient'] = predictions_evaluation_summary['scores']['dice_coefficient']
-                df_train.loc[df_train['id'] == image_id, 'intersection_over_union'] = predictions_evaluation_summary['scores']['intersection_over_union']
+                df_train.loc[df_train['id'] == row['id'], 'dice_coefficient'] = predictions_evaluation_summary['scores']['dice_coefficient']
+                df_train.loc[df_train['id'] == row['id'], 'intersection_over_union'] = predictions_evaluation_summary['scores']['intersection_over_union']
 
-                predictions_mask = np.uint8(predictions_mask >= self.inference_parameters['label_thresholds'][row['data_source']][row['organ']])
+                try:
+                    label_threshold = self.inference_parameters['label_thresholds'][row['data_source']][row['organ']]
+                except KeyError:
+                    # Set label threshold to 0.1 for unseen organs or data sources
+                    label_threshold = 0.1
+
+                # Convert evaluation predictions mask's soft predictions to labels
+                predictions_mask = metrics.soft_predictions_to_labels(x=predictions_mask, threshold=label_threshold)
 
                 if self.persistence_parameters['visualize_final_predictions']:
                     visualization.visualize_predictions(

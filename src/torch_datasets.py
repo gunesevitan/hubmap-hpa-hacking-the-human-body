@@ -86,8 +86,8 @@ class SemanticSegmentationDataset(Dataset):
             if self.imaging_measurement_adaptation_probability > 0:
                 if np.random.rand() < self.imaging_measurement_adaptation_probability:
                     # Simulate pixel size artifacts in HPA images randomly
-                    domain_pixel_size = imaging_measurements[data_source]['pixel_size'][organ]
-                    target_pixel_size = imaging_measurements[data_source]['pixel_size'][organ]
+                    domain_pixel_size = imaging_measurements['HPA']['pixel_size'][organ]
+                    target_pixel_size = imaging_measurements['Hubmap']['pixel_size'][organ]
                     pixel_size_scale_factor = domain_pixel_size / target_pixel_size
 
                     image_resized = cv2.resize(image, dsize=None, fx=pixel_size_scale_factor, fy=pixel_size_scale_factor, interpolation=cv2.INTER_LINEAR)

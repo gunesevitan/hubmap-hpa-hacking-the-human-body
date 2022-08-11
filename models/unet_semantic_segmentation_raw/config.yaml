@@ -3,10 +3,10 @@ task: semantic_segmentation
 dataset_parameters:
   inputs: image_filename
   targets: rle
-  mask_format: rle
-  external_data: [HuBMAP_HPA_Organ_Segmentation]
-  crop_black_border: False
-  crop_background: False
+  external_data: [
+    HuBMAP_HPA_Organ_Segmentation,
+    GTEx
+  ]
 
 model_parameters:
   model_module: smp
@@ -25,12 +25,12 @@ model_parameters:
   model_checkpoint_path: null
 
 training_parameters:
-  folds: [fold1]
+  folds: [fold1, fold2, fold3, fold4, fold5]
   loss_function: WeightedSegmentationLoss
   loss_args:
     distribution_based_loss_function: SoftBCEWithLogitsLoss
     distribution_based_loss_function_args: {}
-    distribution_based_loss_function_weight: 0.6
+    distribution_based_loss_function_weight: 0.5
     region_based_loss_function: TverskyLoss
     region_based_loss_function_args:
       mode: binary
@@ -40,31 +40,32 @@ training_parameters:
       alpha: 0.5
       beta: 0.5
       gamma: 1.0
-    region_based_loss_function_weight: 0.4
-  optimizer: Adam
+    region_based_loss_function_weight: 0.5
+  optimizer: AdamW
   optimizer_args:
     lr: 0.001
     betas: [0.9, 0.999]
-    weight_decay: 0.0
+    weight_decay: 0.00000001
   lr_scheduler: StepLR
   lr_scheduler_args:
     step_size: 500
     gamma: 0.5
     last_epoch: -1
-  swa_start_epoch: 15
-  swa_lr: 0.05
-  swa_anneal_epochs: 5
+  swa_start_epoch: 20
+  swa_lr: 0.0001
+  swa_anneal_epochs: 1
   swa_anneal_strategy: cos
   epochs: 250
   early_stopping_patience: 10
   training_batch_size: 4
-  test_batch_size: 16
+  test_batch_size: 8
   num_workers: 4
   random_state: 42
   deterministic_cudnn: False
   device: cuda
 
 transform_parameters:
+  imaging_measurement_adaptation_probability: 0.5
   resize_height: 768
   resize_width: 768
   horizontal_flip_probability: 0.5
@@ -74,9 +75,9 @@ transform_parameters:
   scale_limit: [0.1, 0.9]
   rotate_limit: 45
   shift_scale_rotate_probability: 0.5
-  hue_shift_limit: 20
+  hue_shift_limit: 10
   saturation_shift_limit: 30
-  value_shift_limit: 20
+  value_shift_limit: 10
   hue_saturation_value_probability: 0.5
   brightness_limit: 0.2
   contrast_limit: 0.2
@@ -84,8 +85,8 @@ transform_parameters:
   clahe_clip_limit: 4
   clahe_tile_grid_size: [8, 8]
   clahe_probability: 0.8
-  equalize_probability: 0.2
-  histogram_equalization_probability: 0.25
+  equalize_probability: 0.25
+  histogram_equalization_probability: 0.2
   grid_distortion_num_steps: 4
   grid_distortion_distort_limit: 0.3
   grid_distortion_probability: 0.5
@@ -122,15 +123,35 @@ transform_parameters:
   normalize_max_pixel_value: 255
 
 inference_parameters:
-  folds: [fold1]
+  folds: [fold1, fold2, fold3, fold4, fold5]
+  size:
+    HPA:
+      kidney: [768, 768]
+      prostate: [768, 768]
+      largeintestine: [768, 768]
+      spleen: [768, 768]
+      lung: [768, 768]
+    Hubmap:
+      kidney: [768, 768]
+      prostate: [768, 768]
+      largeintestine: [768, 768]
+      spleen: [768, 768]
+      lung: [768, 768]
   tta: True
   label_threshold_range: [0.5]
   label_thresholds:
-    kidney: 0.45
-    prostate: 0.45
-    largeintestine: 0.5
-    spleen: 0.5
-    lung: 0.2
+    HPA:
+      kidney: 0.5
+      prostate: 0.5
+      largeintestine: 0.5
+      spleen: 0.5
+      lung: 0.1
+    Hubmap:
+      kidney: 0.5
+      prostate: 0.5
+      largeintestine: 0.5
+      spleen: 0.5
+      lung: 0.5
 
 persistence_parameters:
   name: unet_semantic_segmentation_raw
@@ -139,4 +160,5 @@ persistence_parameters:
   evaluate_final_predictions: False
   visualize_learning_curve: True
   visualize_training_scores: True
-  save_models: True
+  save_best_model: True
+  save_epoch_model: []

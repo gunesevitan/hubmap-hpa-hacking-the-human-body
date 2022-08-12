@@ -14,25 +14,38 @@ import preprocessing
 
 if __name__ == '__main__':
 
+    # JPG files are very large since their pixel sizes are quite small
+    # Prostate images doesn't need any further resize operation
+    image_sizes = {
+        'spleen': 2400,
+        'prostate': None,
+    }
+
     pixel_sizes = {
-        'spleen': 0.4945
+        'spleen': 0.4945,
+        'prostate': 6.263
     }
 
     resize_images = True
     dataset_path = settings.DATA / 'external_data' / 'GTEx'
-    raw_image_filenames = sorted(glob(str(dataset_path / 'raw_images' / '*.jpg')))
-    image_filenames = sorted(glob(str(dataset_path / 'images' / '*.jpg')))
+    raw_image_filenames = sorted(glob(str(dataset_path / 'raw_images' / '*')))
 
     if resize_images:
         for image_filename in tqdm(raw_image_filenames):
 
             image_id = image_filename.split("/")[-1].split(".")[0]
-
+            image_format = image_filename.split("/")[-1].split(".")[-1]
+            organ = image_id.split('_')[-2]
             image = cv2.imread(image_filename)
 
             if resize_images:
-                image = preprocessing.resize_with_aspect_ratio(image=image, longest_edge=2400)
-                cv2.imwrite(str(dataset_path / 'images' / f'{image_id}.jpg'), image)
+                longest_edge = image_sizes[organ]
+                if longest_edge is not None:
+                    image = preprocessing.resize_with_aspect_ratio(image=image, longest_edge=longest_edge)
+
+                cv2.imwrite(str(dataset_path / 'images' / f'{image_id}.{image_format}'), image)
+
+    image_filenames = sorted(glob(str(dataset_path / 'images' / '*')))
 
     metadata = []
 

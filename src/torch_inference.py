@@ -69,7 +69,7 @@ def load_model(path, folds=(1, 2, 3, 4, 5), verbose=False):
 
 if __name__ == '__main__':
 
-    save_mask = False
+    save_mask = True
     visualize_predictions = False
 
     parser = argparse.ArgumentParser()
@@ -79,8 +79,6 @@ if __name__ == '__main__':
 
     dataset_path = pathlib.Path(args.dataset_path)
     df_metadata = pd.read_csv(dataset_path / 'metadata.csv')
-    np.random.seed(42)
-    df_metadata_inference = df_metadata.loc[(df_metadata['organ'] == 'kidney') & (df_metadata['stain'] == 'DAB&H'), :]
     unet_semantic_segmentation_raw_config, unet_semantic_segmentation_raw_models = load_model(
         path=args.model_path,
         folds=(1, 2, 3, 4, 5),
@@ -88,7 +86,7 @@ if __name__ == '__main__':
     )
     dataset_transforms = transforms.get_semantic_segmentation_transforms(**unet_semantic_segmentation_raw_config['transform_parameters'])
 
-    for idx, row in tqdm(df_metadata_inference.iterrows(), total=df_metadata_inference.shape[0]):
+    for idx, row in tqdm(df_metadata.iterrows(), total=df_metadata.shape[0]):
 
         if row['image_filename'].split('.')[-1] == 'tiff' or row['image_filename'].split('.')[-1] == 'tif':
             image = tifffile.imread(row['image_filename'])
@@ -141,7 +139,7 @@ if __name__ == '__main__':
         try:
             label_threshold = unet_semantic_segmentation_raw_config['inference_parameters']['label_thresholds'][row['data_source']][row['organ']]
         except KeyError:
-            # Set label threshold to 0.1 for unseen organs
+            # Set label threshold to 0.1 for unseen organs or data sources
             label_threshold = 0.1
 
         if visualize_predictions:
@@ -164,7 +162,7 @@ if __name__ == '__main__':
 
         df_metadata.loc[idx, 'rle'] = annotation_utils.encode_rle_mask(predictions_mask)
         if save_mask:
-            np.save(str(dataset_path / 'masks' / f'{row["id"]}.npy'), predictions_mask)
+            np.save(str(dataset_path / 'predictions_masks' / f'{row["id"]}.npy'), predictions_mask)
 
     df_metadata.to_csv(dataset_path / 'metadata.csv', index=False)
     logging.info(f'Saved metadata.csv to {dataset_path}')

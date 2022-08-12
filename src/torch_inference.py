@@ -162,7 +162,7 @@ if __name__ == '__main__':
 
         df_metadata.loc[idx, 'rle'] = annotation_utils.encode_rle_mask(predictions_mask)
         if save_mask:
-            np.save(str(dataset_path / 'predictions_masks' / f'{row["id"]}.npy'), predictions_mask)
+            np.save(str(dataset_path / 'prediction_masks' / f'{row["id"]}.npy'), predictions_mask)
 
     df_metadata.to_csv(dataset_path / 'metadata.csv', index=False)
     logging.info(f'Saved metadata.csv to {dataset_path}')

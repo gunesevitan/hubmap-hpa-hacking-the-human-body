@@ -152,7 +152,8 @@ class SemanticSegmentationTrainer:
                 organs=df_train.loc[train_idx, 'organ'].values,
                 data_sources=df_train.loc[train_idx, 'data_source'].values,
                 masks=df_train.loc[train_idx, self.dataset_parameters['targets']].values,
-                transforms=dataset_transforms['train']
+                transforms=dataset_transforms['train'],
+                imaging_measurement_adaptation_probability=self.transform_parameters['imaging_measurement_adaptation_probability']
             )
             train_loader = DataLoader(
                 train_dataset,
@@ -166,8 +167,9 @@ class SemanticSegmentationTrainer:
                 image_paths=df_train.loc[val_idx, self.dataset_parameters['inputs']].values,
                 organs=df_train.loc[val_idx, 'organ'].values,
                 data_sources=df_train.loc[val_idx, 'data_source'].values,
-                masks=df_train.loc[train_idx, self.dataset_parameters['targets']].values,
+                masks=df_train.loc[val_idx, self.dataset_parameters['targets']].values,
                 transforms=dataset_transforms['val'],
+                imaging_measurement_adaptation_probability=0
             )
             val_loader = DataLoader(
                 val_dataset,

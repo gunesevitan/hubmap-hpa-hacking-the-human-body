@@ -65,6 +65,7 @@ training_parameters:
   device: cuda
 
 transform_parameters:
+  imaging_measurement_adaptation_probability: 0.5
   resize_height: 768
   resize_width: 768
   horizontal_flip_probability: 0.5

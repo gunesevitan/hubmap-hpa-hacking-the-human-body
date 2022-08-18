@@ -45,12 +45,13 @@ imaging_measurements = {
 
 class SemanticSegmentationDataset(Dataset):
 
-    def __init__(self, image_paths, organs, data_sources, masks=None, transforms=None):
+    def __init__(self, image_paths, organs, data_sources, masks=None, imaging_measurement_adaptation_probability=0, transforms=None):
 
         self.image_paths = image_paths
         self.organs = organs
         self.data_sources = data_sources
         self.masks = masks
+        self.imaging_measurement_adaptation_probability = imaging_measurement_adaptation_probability
         self.transforms = transforms
 
     def __len__(self):
@@ -80,6 +81,17 @@ class SemanticSegmentationDataset(Dataset):
             image = cv2.imread(str(self.image_paths[idx]))
         else:
             raise ValueError(f'Invalid data source: {data_source}')
+
+        if data_source == 'HPA':
+            if self.imaging_measurement_adaptation_probability > 0:
+                if np.random.rand() < self.imaging_measurement_adaptation_probability:
+                    # Simulate pixel size artifacts in HPA images randomly
+                    domain_pixel_size = imaging_measurements['HPA']['pixel_size'][organ]
+                    target_pixel_size = imaging_measurements['Hubmap']['pixel_size'][organ]
+                    pixel_size_scale_factor = domain_pixel_size / target_pixel_size
+
+                    image_resized = cv2.resize(image, dsize=None, fx=pixel_size_scale_factor, fy=pixel_size_scale_factor, interpolation=cv2.INTER_LINEAR)
+                    image = cv2.resize(image_resized, dsize=(image.shape[1], image.shape[0]), interpolation=cv2.INTER_LINEAR)
 
         if self.masks is not None:
 

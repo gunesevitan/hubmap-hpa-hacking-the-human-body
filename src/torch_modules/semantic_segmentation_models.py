@@ -24,17 +24,15 @@ class SemanticSegmentationModel(nn.Module):
 
 class HuggingFaceTransformersModel(nn.Module):
 
-    def __init__(self, model_class, model_args):
+    def __init__(self, model_class, model_args, upsample_args):
 
         super(HuggingFaceTransformersModel, self).__init__()
 
-        self.model = getattr(transformers, model_class).from_pretrained(model_args['model_weights'])
-        self.model.decode_head.dropout = nn.Dropout(model_args['decoder_dropout_rate'])
-        self.model.decode_head.classifier = nn.Conv2d(256, 1, kernel_size=(1, 1), stride=(1, 1))
+        self.model = getattr(transformers, model_class).from_pretrained(**model_args)
         self.upsample = nn.Upsample(
-            size=model_args['upsample_size'],
-            mode=model_args['upsample_mode'],
-            align_corners=model_args['upsample_align_corners']
+            size=upsample_args['upsample_size'],
+            mode=upsample_args['upsample_mode'],
+            align_corners=upsample_args['upsample_align_corners']
         )
 
     def forward(self, x):

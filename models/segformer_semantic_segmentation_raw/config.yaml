@@ -12,11 +12,22 @@ model_parameters:
   model_module: transformers
   model_class: SegformerForSemanticSegmentation
   model_args:
-    model_weights: nvidia/segformer-b0-finetuned-ade-512-512
-    decoder_dropout_rate: 0
-    upsample_size: 768
-    upsample_mode: bilinear
-    upsample_align_corners: False
+    pretrained: nvidia/segformer-b0-finetuned-ade-512-512
+    attention_probs_dropout_prob: 0.0
+    classifier_dropout_prob: 0.0
+    hidden_dropout_prob: 0.0
+    id2label:
+      1: ftu
+    label2id:
+      ftu: 1
+    image_size: 768
+    initializer_range: 0.02
+    num_channels: 3
+    reshape_last_stage: true
+    upsample_args:
+      upsample_size: 768
+      upsample_mode: bilinear
+      upsample_align_corners: False
   model_checkpoint_path: null
 
 training_parameters:

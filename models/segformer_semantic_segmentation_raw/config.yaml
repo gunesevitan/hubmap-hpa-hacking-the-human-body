@@ -24,10 +24,10 @@ model_parameters:
     initializer_range: 0.02
     num_channels: 3
     reshape_last_stage: true
-    upsample_args:
-      upsample_size: 768
-      upsample_mode: bilinear
-      upsample_align_corners: False
+  upsample_args:
+    upsample_size: 768
+    upsample_mode: bilinear
+    upsample_align_corners: False
   model_checkpoint_path: null
 
 training_parameters:

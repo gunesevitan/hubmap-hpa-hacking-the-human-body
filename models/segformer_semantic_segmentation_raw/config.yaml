@@ -24,6 +24,7 @@ model_parameters:
     initializer_range: 0.02
     num_channels: 3
     reshape_last_stage: true
+    ignore_mismatched_sizes: true
   upsample_args:
     upsample_size: 768
     upsample_mode: bilinear

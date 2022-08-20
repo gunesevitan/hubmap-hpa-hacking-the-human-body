@@ -184,11 +184,19 @@ class SemanticSegmentationTrainer:
             torch_utils.set_seed(self.training_parameters['random_state'], deterministic_cudnn=self.training_parameters['deterministic_cudnn'])
             device = torch.device(self.training_parameters['device'])
             criterion = getattr(torch_modules, self.training_parameters['loss_function'])(**self.training_parameters['loss_args'])
-            model = torch_modules.SemanticSegmentationModel(
-                self.model_parameters['model_module'],
-                self.model_parameters['model_class'],
-                self.model_parameters['model_args']
-            )
+            
+            if self.model_parameters['model_module'] in ['smp', 'monai']:
+                model = torch_modules.SemanticSegmentationModel(
+                    self.model_parameters['model_module'],
+                    self.model_parameters['model_class'],
+                    self.model_parameters['model_args']
+                )
+            elif self.model_parameters['model_module'] == 'transformers':
+                model = torch_modules.HuggingFaceTransformersModel(
+                    self.model_parameters['model_module'],
+                    self.model_parameters['model_class']
+                )
+
             if self.model_parameters['model_checkpoint_path'] is not None:
                 model.load_state_dict(torch.load(self.model_parameters['model_checkpoint_path']))
             model.to(device)

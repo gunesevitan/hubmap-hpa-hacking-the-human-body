@@ -161,7 +161,7 @@ inference_parameters:
       lung: 0.5
 
 persistence_parameters:
-  name: unet_semantic_segmentation_raw
+  name: segformer_semantic_segmentation_raw
   visualize_epoch_predictions: False
   visualize_final_predictions: False
   evaluate_final_predictions: False

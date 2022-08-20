@@ -194,7 +194,8 @@ class SemanticSegmentationTrainer:
             elif self.model_parameters['model_module'] == 'transformers':
                 model = torch_modules.HuggingFaceTransformersModel(
                     self.model_parameters['model_class'],
-                    self.model_parameters['model_args']
+                    self.model_parameters['model_args'],
+                    self.model_parameters['upsample_args']
                 )
 
             if self.model_parameters['model_checkpoint_path'] is not None:

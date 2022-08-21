@@ -75,7 +75,7 @@ class SemanticSegmentationDataset(Dataset):
         organ = self.organs[idx]
         data_source = self.data_sources[idx]
 
-        if data_source == 'HPA' or data_source == 'Hubmap':
+        if data_source == 'HPA' or data_source == 'Hubmap' or data_source == 'HuBMAP_Colonic_Crypt':
             image = tifffile.imread(str(self.image_paths[idx]))
         elif data_source == 'GTEx':
             image = cv2.imread(str(self.image_paths[idx]))

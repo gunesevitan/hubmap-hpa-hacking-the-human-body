@@ -3,6 +3,7 @@ import cv2
 import tifffile
 import torch
 from torch.utils.data import Dataset
+import staintools
 
 import annotation_utils
 
@@ -45,13 +46,15 @@ imaging_measurements = {
 
 class SemanticSegmentationDataset(Dataset):
 
-    def __init__(self, image_paths, organs, data_sources, masks=None, imaging_measurement_adaptation_probability=0, transforms=None):
+    def __init__(self, image_paths, organs, data_sources, masks=None,
+                 imaging_measurement_adaptation_probability=0, standardize_luminosity_probability=0, transforms=None):
 
         self.image_paths = image_paths
         self.organs = organs
         self.data_sources = data_sources
         self.masks = masks
         self.imaging_measurement_adaptation_probability = imaging_measurement_adaptation_probability
+        self.standardize_luminosity_probability = standardize_luminosity_probability
         self.transforms = transforms
 
     def __len__(self):
@@ -92,6 +95,11 @@ class SemanticSegmentationDataset(Dataset):
 
                     image_resized = cv2.resize(image, dsize=None, fx=pixel_size_scale_factor, fy=pixel_size_scale_factor, interpolation=cv2.INTER_LINEAR)
                     image = cv2.resize(image_resized, dsize=(image.shape[1], image.shape[0]), interpolation=cv2.INTER_LINEAR)
+
+        if self.standardize_luminosity_probability > 0:
+            if np.random.rand() < self.standardize_luminosity_probability:
+                # Standardize luminosity
+                image = staintools.LuminosityStandardizer.standardize(image)
 
         if self.masks is not None:
 

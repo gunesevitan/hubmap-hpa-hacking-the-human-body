@@ -20,7 +20,7 @@ if __name__ == '__main__':
     for idx, row in tqdm(df_train.iterrows(), total=df_train.shape[0]):
         mask = annotation_utils.decode_rle_mask(
             rle_mask=row['rle'],
-            shape=(row['img_height'], row['img_width'])
+            shape=(row['image_height'], row['image_width'])
         ).T
         np.save(masks_path / f'{row["id"]}.npy', mask)
 

@@ -20,6 +20,7 @@ if __name__ == '__main__':
     train_raw_images_filenames = glob(str(settings.DATA / 'train_images' / '*.tiff'))
     test_raw_images_filenames = glob(str(settings.DATA / 'test_images' / '*.tiff'))
     hpa_images_filenames = glob(str(settings.DATA / 'external_data' / 'HPA' / 'images' / '*.png'))
+    hubmap_colonic_crypt_images_filenames = glob(str(settings.DATA / 'external_data' / 'HuBMAP_Colonic_Crypt' / 'images' / '*.tiff'))
     hubmap_kidney_segmentation_images_filenames = glob(str(settings.DATA / 'external_data' / 'HuBMAP_Kidney_Segmentation' / 'images' / '*.png'))
     hubmap_portal_images_filenames = glob(str(settings.DATA / 'external_data' / 'HuBMAP_Portal' / 'images' / '*.png'))
     anhir_images_filenames = glob(str(settings.DATA / 'external_data' / 'ANHIR' / 'images' / '*.jpg'))
@@ -27,16 +28,20 @@ if __name__ == '__main__':
     crag_images_filenames = glob(str(settings.DATA / 'external_data' / 'CRAG' / 'images' / '*.png'))
     crchistophenotypes_images_filenames = glob(str(settings.DATA / 'external_data' / 'CRCHistoPhenotypes' / 'images' / '*.bmp'))
     glas_images_filenames = glob(str(settings.DATA / 'external_data' / 'GlaS' / 'images' / '*.bmp'))
+    gtex_images_filenames = glob(str(settings.DATA / 'external_data' / 'GTEx' / 'images' / '*.jpg')) + glob(str(settings.DATA / 'external_data' / 'GTEx' / 'images' / '*.png'))
     lyon19_images_filenames = glob(str(settings.DATA / 'external_data' / 'LYON19' / 'images' / '*.png'))
     monusac_images_filenames = glob(str(settings.DATA / 'external_data' / 'MoNuSAC' / 'images' / '*.tif'))
     monuseg_images_filenames = glob(str(settings.DATA / 'external_data' / 'MoNuSeg' / 'images' / '*.tif'))
     pannuke_images_filenames = glob(str(settings.DATA / 'external_data' / 'PanNuke' / 'images' / '*.png'))
+    uom_histology_images_filenames = glob(str(settings.DATA / 'external_data' / 'UoM_Histology' / 'images' / '*.tiff'))
 
     image_filenames = train_raw_images_filenames + test_raw_images_filenames + hpa_images_filenames +\
                       hubmap_kidney_segmentation_images_filenames + hubmap_portal_images_filenames +\
                       anhir_images_filenames + consep_images_filenames + crag_images_filenames +\
                       crchistophenotypes_images_filenames + glas_images_filenames + lyon19_images_filenames +\
                       monusac_images_filenames + monuseg_images_filenames + pannuke_images_filenames
+
+    image_filenames = train_raw_images_filenames + test_raw_images_filenames + gtex_images_filenames + hubmap_colonic_crypt_images_filenames
 
     for image_filename in tqdm(image_filenames):
 

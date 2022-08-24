@@ -39,6 +39,7 @@ def _get_external_data(df, external_data):
 
     df = pd.concat([df] + list(external_data.values()), axis=0, ignore_index=True)
     df = df.loc[df['rle'].notna(), :].reset_index(drop=True)
+    df.loc[df['rle_corrected'].isna(), 'rle_corrected'] = df.loc[df['rle_corrected'].isna(), 'rle'].values
     df[[column for column in df.columns if column.startswith('fold')]] = df[[column for column in df.columns if column.startswith('fold')]].fillna(0).astype(np.uint8)
 
     return df

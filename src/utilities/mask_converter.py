@@ -22,6 +22,6 @@ if __name__ == '__main__':
 
         image_id = int(mask_filename.split('/')[-1].split('.')[0])
         mask = np.load(mask_filename)
-        df_train.loc[df_train['id'] == image_id, 'rle_corrected'] = annotation_utils.encode_rle_mask(mask)
+        df_train.loc[df_train['id'] == image_id, 'rle_corrected'] = annotation_utils.encode_rle_mask(mask.T)
 
     df_train.to_csv(settings.DATA / 'train_metadata.csv', index=False)

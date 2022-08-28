@@ -30,6 +30,7 @@ if __name__ == '__main__':
             df_train=df_train,
             df_test=df_test,
             df_folds=df_folds,
+            raw_data=config['dataset_parameters']['raw_data'],
             external_data=external_data
         )
 

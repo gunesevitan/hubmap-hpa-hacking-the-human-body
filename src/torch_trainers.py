@@ -10,7 +10,6 @@ import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 import torch.optim as optim
 import torch.optim.swa_utils as swa_utils
-import ttach as tta
 
 import settings
 import annotation_utils
@@ -151,7 +150,7 @@ class SemanticSegmentationTrainer:
                 image_paths=df_train.loc[train_idx, self.dataset_parameters['inputs']].values,
                 organs=df_train.loc[train_idx, 'organ'].values,
                 data_sources=df_train.loc[train_idx, 'data_source'].values,
-                masks=df_train.loc[train_idx, self.dataset_parameters['targets']].values,
+                masks=df_train.loc[train_idx, 'rle'].values,
                 transforms=dataset_transforms['train'],
                 imaging_measurement_adaptation_probability=self.transform_parameters['imaging_measurement_adaptation_probability'],
                 standardize_luminosity_probability=self.transform_parameters['standardize_luminosity_probability']
@@ -168,7 +167,7 @@ class SemanticSegmentationTrainer:
                 image_paths=df_train.loc[val_idx, self.dataset_parameters['inputs']].values,
                 organs=df_train.loc[val_idx, 'organ'].values,
                 data_sources=df_train.loc[val_idx, 'data_source'].values,
-                masks=df_train.loc[val_idx, self.dataset_parameters['targets']].values,
+                masks=df_train.loc[val_idx, 'rle'].values,
                 transforms=dataset_transforms['val'],
                 imaging_measurement_adaptation_probability=0,
                 standardize_luminosity_probability=0

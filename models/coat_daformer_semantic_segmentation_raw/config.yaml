@@ -1,0 +1,169 @@
+task: semantic_segmentation
+
+dataset_parameters:
+  inputs: image_filename
+  raw_data:
+    kidney: rle_corrected
+    prostate: rle
+    largeintestine: rle_corrected
+    spleen: rle
+    lung: rle
+  external_data: [
+    HuBMAP_HPA_Organ_Segmentation,
+    HuBMAP_Colonic_Crypt,
+    GTEx
+  ]
+
+model_parameters:
+  model_module: coat_daformer
+  model_class: CoaTDAFormer
+  model_args:
+    encoder_name: coat_lite_medium
+    decoder_args:
+      encoder_dim: [128, 256, 320, 512]
+      decoder_dim: 256
+      dilation: [1, 6, 12, 18]
+      use_bn_mlp: True
+      fuse: conv3x3
+    encoder_weights: ../models/coat/coat_lite_medium.pth
+  model_checkpoint_path: null
+
+training_parameters:
+  folds: [fold1, fold2, fold3, fold4, fold5]
+  loss_function: WeightedSegmentationLoss
+  loss_args:
+    distribution_based_loss_function: SoftBCEWithLogitsLoss
+    distribution_based_loss_function_args: {}
+    distribution_based_loss_function_weight: 0.5
+    region_based_loss_function: TverskyLoss
+    region_based_loss_function_args:
+      mode: binary
+      log_loss: False
+      from_logits: True
+      smooth: 0.0
+      alpha: 0.5
+      beta: 0.5
+      gamma: 1.0
+    region_based_loss_function_weight: 0.5
+  optimizer: AdamW
+  optimizer_args:
+    lr: 0.00025
+    betas: [0.9, 0.999]
+    weight_decay: 0
+  lr_scheduler: StepLR
+  lr_scheduler_args:
+    step_size: 1000
+    gamma: 0.75
+    last_epoch: -1
+  swa_start_epoch: 40
+  swa_lr: 0.0001
+  swa_anneal_epochs: 1
+  swa_anneal_strategy: cos
+  epochs: 250
+  early_stopping_patience: 15
+  training_batch_size: 4
+  test_batch_size: 8
+  num_workers: 4
+  random_state: 42
+  deterministic_cudnn: False
+  device: cuda
+
+transform_parameters:
+  imaging_measurement_adaptation_probability: 0.1
+  standardize_luminosity_probability: 0.1
+  resize_height: 768
+  resize_width: 768
+  horizontal_flip_probability: 0.5
+  vertical_flip_probability: 0.5
+  random_rotate_90_probability: 0.25
+  shift_limit: 0.025
+  scale_limit: [0.1, 0.9]
+  rotate_limit: 45
+  shift_scale_rotate_probability: 0.5
+  hue_shift_limit: 10
+  saturation_shift_limit: 40
+  value_shift_limit: 10
+  hue_saturation_value_probability: 0.5
+  brightness_limit: 0.2
+  contrast_limit: 0.2
+  random_brightness_contrast_probability: 0.25
+  clahe_clip_limit: 4
+  clahe_tile_grid_size: [8, 8]
+  clahe_probability: 0.8
+  equalize_probability: 0.2
+  histogram_equalization_probability: 0.2
+  grid_distortion_num_steps: 4
+  grid_distortion_distort_limit: 0.3
+  grid_distortion_probability: 0.5
+  optical_distortion_distort_limit: 0.03
+  optical_distortion_shift_limit: 0.03
+  optical_distortion_probability: 0.5
+  distortion_probability: 0.25
+  channel_shuffle_probability: 0.8
+  channel_dropout_channel_drop_range: [1, 1]
+  channel_dropout_fill_value: 0
+  channel_dropout_probability: 0.2
+  channel_transform_probability: 0.0
+  coarse_dropout_max_holes: 16
+  coarse_dropout_max_height: 32
+  coarse_dropout_max_width: 32
+  coarse_dropout_min_holes: 2
+  coarse_dropout_min_height: 8
+  coarse_dropout_min_width: 8
+  coarse_dropout_fill_value: 0
+  coarse_dropout_mask_fill_value: 0
+  coarse_dropout_probability: 0.4
+  pixel_dropout_dropout_probability: 0.1
+  pixel_dropout_per_channel: False
+  pixel_dropout_drop_value: 0
+  pixel_dropout_mask_drop_value: 0
+  pixel_dropout_probability: 0.3
+  mask_dropout_max_objects: 2
+  mask_dropout_image_fill_value: 0
+  mask_dropout_mask_fill_value: 0
+  mask_dropout_probability: 0.3
+  dropout_probability: 0.1
+  normalize_mean: [0.8312294127907869, 0.7892163180918952, 0.8181850568083983]
+  normalize_std: [0.17338117874923145, 0.22940288410347526, 0.19376236042661435]
+  normalize_max_pixel_value: 255
+
+inference_parameters:
+  folds: [fold1, fold2, fold3, fold4, fold5]
+  size:
+    HPA:
+      kidney: [768, 768]
+      prostate: [768, 768]
+      largeintestine: [768, 768]
+      spleen: [768, 768]
+      lung: [768, 768]
+    Hubmap:
+      kidney: [768, 768]
+      prostate: [768, 768]
+      largeintestine: [768, 768]
+      spleen: [768, 768]
+      lung: [768, 768]
+  tta: True
+  label_threshold_range: [0.5]
+  label_thresholds:
+    HPA:
+      kidney: 0.5
+      prostate: 0.5
+      largeintestine: 0.5
+      spleen: 0.5
+      lung: 0.05
+    Hubmap:
+      kidney: 0.5
+      prostate: 0.5
+      largeintestine: 0.5
+      spleen: 0.5
+      lung: 0.5
+
+persistence_parameters:
+  name: coat_daformer_semantic_segmentation_raw
+  visualize_epoch_predictions: False
+  visualize_final_predictions: False
+  evaluate_final_predictions: False
+  visualize_learning_curve: True
+  visualize_training_scores: True
+  save_best_model: True
+  save_epoch_model: []

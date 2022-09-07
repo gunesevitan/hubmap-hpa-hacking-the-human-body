@@ -427,7 +427,7 @@ class SemanticSegmentationTrainer:
                     self.model_parameters['upsample_args']
                 )
             elif self.model_parameters['model_module'] == 'coat_daformer':
-                model = torch_modules.CoaTDAFormer(self.model_parameters['model_args'])
+                model = torch_modules.CoaTDAFormer(**self.model_parameters['model_args'])
             else:
                 raise ValueError('Invalid Model Module')
 

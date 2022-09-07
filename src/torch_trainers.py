@@ -422,6 +422,11 @@ class SemanticSegmentationTrainer:
                     self.model_parameters['model_args'],
                     self.model_parameters['upsample_args']
                 )
+            elif self.model_parameters['model_module'] == 'coat_daformer':
+                model = torch_modules.CoaTDAFormer(self.model_parameters['model_args'])
+            else:
+                raise ValueError('Invalid Model Module')
+
             model.load_state_dict(torch.load(model_root_directory / f'model_{fold}_best.pt'))
             model.to(device)
             model.eval()

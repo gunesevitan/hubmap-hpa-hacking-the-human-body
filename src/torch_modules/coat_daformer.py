@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 
-import coat
-import daformer
+from . import coat
+from . import daformer
 
 
 class CoaTDAFormer(nn.Module):

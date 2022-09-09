@@ -13,7 +13,7 @@ class CoaTDAFormer(nn.Module):
 
         self.encoder = getattr(coat, encoder_name)()
         if encoder_weights is not None:
-            if encoder_weights == 'coat_lite_medium':
+            if encoder_name == 'coat_lite_medium':
                 state_dict = torch.load(encoder_weights)['model']
             else:
                 state_dict = torch.load(encoder_weights)

@@ -15,19 +15,26 @@ dataset_parameters:
   ]
 
 model_parameters:
-  model_module: smp
-  model_class: Unet
+  model_module: transformers
+  model_class: SegformerForSemanticSegmentation
   model_args:
-    encoder_name: efficientnet-b6
-    encoder_depth: 5
-    encoder_weights: imagenet
-    decoder_use_batchnorm: True
-    decoder_channels: [256, 128, 64, 32, 16]
-    decoder_attention_type: null
-    in_channels: 3
-    classes: 1
-    activation: null
-    aux_params: null
+    pretrained_model_name_or_path: nvidia/mit-b3
+    attention_probs_dropout_prob: 0.0
+    classifier_dropout_prob: 0.1
+    hidden_dropout_prob: 0.0
+    id2label:
+      1: ftu
+    label2id:
+      ftu: 1
+    image_size: 768
+    initializer_range: 0.02
+    num_channels: 3
+    reshape_last_stage: true
+    ignore_mismatched_sizes: true
+  upsample_args:
+    upsample_size: 768
+    upsample_mode: bilinear
+    upsample_align_corners: False
   model_checkpoint_path: null
 
 training_parameters:
@@ -49,15 +56,15 @@ training_parameters:
     region_based_loss_function_weight: 0.5
   optimizer: AdamW
   optimizer_args:
-    lr: 0.0005
+    lr: 0.00025
     betas: [0.9, 0.999]
-    weight_decay: 0.000001
+    weight_decay: 0
   lr_scheduler: StepLR
   lr_scheduler_args:
     step_size: 1000
-    gamma: 0.5
+    gamma: 0.75
     last_epoch: -1
-  swa_start_epoch: 35
+  swa_start_epoch: 40
   swa_lr: 0.0001
   swa_anneal_epochs: 1
   swa_anneal_strategy: cos
@@ -133,9 +140,9 @@ inference_parameters:
   folds: [fold1, fold2, fold3, fold4, fold5]
   size:
     HPA:
-      kidney: [864, 864]
+      kidney: [768, 768]
       prostate: [768, 768]
-      largeintestine: [864, 864]
+      largeintestine: [768, 768]
       spleen: [768, 768]
       lung: [768, 768]
     Hubmap:
@@ -161,7 +168,7 @@ inference_parameters:
       lung: 0.5
 
 persistence_parameters:
-  name: unet_semantic_segmentation_raw_efficientnetb6_768
+  name: segformer_semantic_segmentation_raw
   visualize_epoch_predictions: False
   visualize_final_predictions: False
   evaluate_final_predictions: False

@@ -18,7 +18,7 @@ model_parameters:
   model_module: smp
   model_class: Unet
   model_args:
-    encoder_name: efficientnet-b6
+    encoder_name: efficientnet-b7
     encoder_depth: 5
     encoder_weights: imagenet
     decoder_use_batchnorm: True
@@ -73,8 +73,8 @@ training_parameters:
 transform_parameters:
   imaging_measurement_adaptation_probability: 0.1
   standardize_luminosity_probability: 0.1
-  resize_height: 768
-  resize_width: 768
+  resize_height: 672
+  resize_width: 672
   horizontal_flip_probability: 0.5
   vertical_flip_probability: 0.5
   random_rotate_90_probability: 0.25
@@ -133,11 +133,11 @@ inference_parameters:
   folds: [fold1, fold2, fold3, fold4, fold5]
   size:
     HPA:
-      kidney: [864, 864]
-      prostate: [768, 768]
-      largeintestine: [864, 864]
-      spleen: [768, 768]
-      lung: [768, 768]
+      kidney: [672, 672]
+      prostate: [672, 672]
+      largeintestine: [672, 672]
+      spleen: [672, 672]
+      lung: [672, 672]
     Hubmap:
       kidney: [768, 768]
       prostate: [768, 768]

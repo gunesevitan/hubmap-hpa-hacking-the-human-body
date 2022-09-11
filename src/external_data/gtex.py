@@ -19,11 +19,13 @@ if __name__ == '__main__':
     image_sizes = {
         'spleen': 2400,
         'prostate': None,
+        'lung': 2000
     }
 
     pixel_sizes = {
         'spleen': 0.4945,
-        'prostate': 6.263
+        'prostate': 6.263,
+        'lung': 0.7562
     }
 
     resize_images = True

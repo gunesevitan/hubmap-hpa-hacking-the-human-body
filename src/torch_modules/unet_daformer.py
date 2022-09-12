@@ -1,7 +1,7 @@
 import torch.nn as nn
 import segmentation_models_pytorch as smp
 
-import daformer
+from . import daformer
 
 
 class UNetDAFormerModel(nn.Module):

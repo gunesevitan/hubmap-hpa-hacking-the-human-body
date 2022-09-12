@@ -198,6 +198,8 @@ class SemanticSegmentationTrainer:
                     self.model_parameters['model_args'],
                     self.model_parameters['upsample_args']
                 )
+            elif self.model_parameters['model_module'] == 'unet_daformer':
+                model = torch_modules.UNetDAFormerModel(**self.model_parameters['model_args'])
             elif self.model_parameters['model_module'] == 'coat_daformer':
                 model = torch_modules.CoaTDAFormer(**self.model_parameters['model_args'])
             else:
@@ -426,6 +428,8 @@ class SemanticSegmentationTrainer:
                     self.model_parameters['model_args'],
                     self.model_parameters['upsample_args']
                 )
+            elif self.model_parameters['model_module'] == 'unet_daformer':
+                model = torch_modules.UNetDAFormerModel(**self.model_parameters['model_args'])
             elif self.model_parameters['model_module'] == 'coat_daformer':
                 model = torch_modules.CoaTDAFormer(**self.model_parameters['model_args'])
             else:

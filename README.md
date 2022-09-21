@@ -71,10 +71,10 @@ Python modules are inside src directory.
 ## Software and Hardware
 
 ```
-Python: 3.10.4
+Python 3.10.4
 QuPath 0.3.2
 ImageJ 1.53
-OS: Ubuntu 22.04.01 LTS
+Ubuntu 22.04.01 LTS
 CPU: AMD Ryzen 9 5950X 16-Core Processor
 GPU: NVIDIA GeForce RTX 3090
 ```

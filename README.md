@@ -197,7 +197,9 @@ Different ensemble weights are used for each organ type and those weights are fo
 
 ## Post-processing
 
-Hard labels are obtained using different thresholds for each organ type. Thresholds are found by trial and error.
+Soft predictions are upsampled to their original sizes using cubic interpolation.
+Hard labels are obtained using different thresholds for each organ type.
+Thresholds are found by trial and error.
 
 * **Kidney**: 0.25
 * **Prostate**: 0.20

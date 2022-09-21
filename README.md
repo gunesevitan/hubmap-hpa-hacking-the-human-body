@@ -66,7 +66,7 @@ Notebooks are inside the notebook directory.
 
 Papers and other resources are inside the resources directory.
 
-Source files are inside src directory.
+Python modules are inside src directory.
 
 ## Software and Hardware
 

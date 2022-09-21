@@ -84,15 +84,15 @@ GPU: NVIDIA GeForce RTX 3090
 * Raw HPA images (pseudo labels on kidney and large intestine images)
 * Raw Single HuBMAP test image (pseudo labels on single spleen image)
 * Raw HuBMAP Colonic Crypt Dataset
-* GTEx WSI Slices(pseudo labels on spleen and prostate images) 
+* GTEx WSI Slices (pseudo labels on spleen and prostate images) 
   * Samples with no abnormalities are selected and downloaded from the platform
-  * Slices are extracted using QuPath with appropriate pixel size and saved as jpeg files with ImageJ
-  * Pseudo labels are generated on slices
+  * Slices are extracted using QuPath with appropriate pixel size and saved as jpeg files using ImageJ
+  * Pseudo labels are generated on extracted slices
 
 ## Models
 
-* CoaT lite medium encoder (ImageNet pretrained) and DAFormer decoder trained on raw images of size 768
-* CoaT lite small encoder (ImageNet pretrained) and DAFormer decoder trained on raw images of size 1088
+* CoaT lite-medium encoder (ImageNet pretrained) and DAFormer decoder trained on raw images of size 768
+* CoaT lite-small encoder (ImageNet pretrained) and DAFormer decoder trained on raw images of size 1088
 * SegFormer MiT-B3 (ADE20k pretrained) trained on raw images of size 768
 * UNet EfficientNet-B2 encoder (ImageNet pretrained) trained on raw images of size 1184
 * UNet EfficientNet-B3 encoder (ImageNet pretrained) trained on raw images of size 1088
@@ -109,9 +109,9 @@ GPU: NVIDIA GeForce RTX 3090
  
 **Loss Function**: Weighted loss function (0.5 x Binary Cross Entropy with Logits Loss + 0.5 x Tversky Loss)
 
-**Optimizer**: AdamW with 2e-4 initial learning rate and learning rate is multiplied with 0.75 after every 1000 steps.
+**Optimizer**: AdamW with 2e-4 initial learning rate and learning rate is multiplied with 0.75 after every 1000 steps
 
-**Batch Size**: Training: 8 - Validation: 16
+**Batch Size**: Training: 4 - Validation: 8
 
 **Stochastic Weight Averaging**: SWA is triggered after 30 epochs with 1e-5 learning rate
 
@@ -142,7 +142,7 @@ GPU: NVIDIA GeForce RTX 3090
 * Stain normalization + horizontal flip + vertical flip
 
 Stain normalization is applied on only HuBMAP images.
-A random HPA image with same organ type is selected as the domain image and target image's stain normalized to that.
+A random HPA image with same organ type is selected as the domain image and target images' stain normalized to that.
 
 ## Ensemble
 
@@ -150,14 +150,15 @@ A random HPA image with same organ type is selected as the domain image and targ
 Models trained on larger images (1088) performed better on kidney and large intestine images.
 Models trained on smaller images (768) performed better on prostate and spleen images.
 None of the models did good on lung images because of the noisy labels, but EfficientNet-B6 was the best among them.
+Sigmoid function is applied to logits at this stage because model predictions were on different scale.
 
-* CoaT lite medium encoder (ImageNet pretrained) and DAFormer decoder trained on raw images of size 768
-* CoaT lite small encoder (ImageNet pretrained) and DAFormer decoder trained on raw images of size 1088
+* CoaT lite-medium encoder (ImageNet pretrained) and DAFormer decoder trained on raw images of size 768
+* CoaT lite-small encoder (ImageNet pretrained) and DAFormer decoder trained on raw images of size 1088
 * SegFormer MiT-B3 (ADE20k pretrained) trained on raw images of size 768
 * UNet EfficientNet-B3 encoder (ImageNet pretrained) trained on raw images of size 1088
 * UNet EfficientNet-B6 encoder (ImageNet pretrained) trained on raw images of size 768
 
-Different ensemble weights are used for each organ and those weights are found by trial and error.
+Different ensemble weights are used for each organ type and those weights are found by trial and error.
 
 **Kidney**:
   * UNet EfficientNet-B3: 0.20
@@ -196,7 +197,6 @@ Different ensemble weights are used for each organ and those weights are found b
 
 ## Post-processing
 
-After the predictions are ensembled, sigmoid function is applied to logits in order to obtain soft labels between 0 and 1.
 Hard labels are obtained using different thresholds for each organ type. Thresholds are found by trial and error.
 
 * **Kidney**: 0.25

@@ -24,20 +24,6 @@ External datasets can be downloaded from their original sources. They aren't pro
 
 ## Project Structure
 
-Internal and external datasets are inside the data directory.
-
-Data analysis and visualizations are inside the eda directory.
-
-Logs are inside the logs directory
-
-Pre-trained model weights and model configurations are inside the models directory.
-
-Notebooks are inside the notebook directory.
-
-Papers and other resources are inside the resources directory.
-
-Source files are inside src directory.
-
 ```
 hubmap-hpa-hacking-the-human-body/
 ├─ data/
@@ -68,15 +54,29 @@ hubmap-hpa-hacking-the-human-body/
 ├─ README.md
 ```
 
+Internal and external datasets are inside the data directory.
+
+Data analysis and visualizations are inside the eda directory.
+
+Logs are inside the logs directory
+
+Pre-trained model weights and model configurations are inside the models directory.
+
+Notebooks are inside the notebook directory.
+
+Papers and other resources are inside the resources directory.
+
+Source files are inside src directory.
+
 ## Software and Hardware
 
 ```
-CPU: AMD Ryzen 9 5950X 16-Core Processor
-GPU: NVIDIA GeForce RTX 3090
-OS: Ubuntu 22.04.01 LTS
 Python: 3.10.4
 QuPath 0.3.2
 ImageJ 1.53
+OS: Ubuntu 22.04.01 LTS
+CPU: AMD Ryzen 9 5950X 16-Core Processor
+GPU: NVIDIA GeForce RTX 3090
 ```
 
 ## Dataset

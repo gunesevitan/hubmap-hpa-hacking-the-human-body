@@ -206,3 +206,22 @@ Thresholds are found by trial and error.
 * **Spleen**: 0.25
 * **Large Intestine**: 0.20
 * **Lung**: 0.05
+
+
+## Results
+
+|                      | Cross-Validation | Public Leaderboard (HPA and HuBMAP) | Public Leaderboard (HuBMAP) |
+|----------------------|------------------|-------------------------------------|-----------------------------|
+| UNet EfficientNet-B3 | 0.7821           | 0.79                                | 0.58                        |
+| UNet EfficientNet-B6 | 0.7809           | 0.81                                | 0.59                        |
+| SegFormer MiT-B3     | 0.7765           | 0.78                                | 0.58                        |
+| CoaT lite small      | 0.7857           | 0.80                                | 0.58                        |
+| CoaT lite medium     | 0.7841           | 0.81                                | 0.59                        |
+| Ensemble             |                  | 0.82                                | 0.59                        |
+
+![hpa_kidney_prediction](static/hpa_kidney_predictions.png "hpa_kidney_prediction")
+![hpa_prostate_prediction](static/hpa_prostate_predictions.png "hpa_prostate_prediction")
+![hpa_spleen_prediction](static/hpa_spleen_predictions.png "hpa_spleen_prediction")
+![hpa_largeintestine_prediction](static/hpa_largeintestine_predictions.png "hpa_largeintestine_prediction")
+![hpa_lung_prediction](static/hpa_lung_predictions.png "hpa_lung_prediction")
+![hubmap_spleen_prediction](static/hubmap_spleen_predictions.png "hubmap_spleen_prediction")

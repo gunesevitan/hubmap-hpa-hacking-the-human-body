@@ -210,6 +210,9 @@ Thresholds are found by trial and error.
 
 ## Results
 
+Quantitative results are provided as cross-validation and public leaderboard scores.
+Public leaderboard scores of both HPA-HuBMAP samples and only HuBMAP samples are tracked.
+
 |                      | Cross-Validation | Public Leaderboard (HPA and HuBMAP) | Public Leaderboard (HuBMAP) |
 |----------------------|------------------|-------------------------------------|-----------------------------|
 | UNet EfficientNet-B3 | 0.7821           | 0.79                                | 0.58                        |
@@ -218,6 +221,8 @@ Thresholds are found by trial and error.
 | CoaT lite small      | 0.7857           | 0.80                                | 0.58                        |
 | CoaT lite medium     | 0.7841           | 0.81                                | 0.59                        |
 | Ensemble             |                  | 0.82                                | 0.59                        |
+
+Qualitative results are provided as predictions visualizations of randomly selected samples for each organ type and the single test image.
 
 ![hpa_kidney_prediction](static/hpa_kidney_predictions.png "hpa_kidney_prediction")
 ![hpa_prostate_prediction](static/hpa_prostate_predictions.png "hpa_prostate_prediction")

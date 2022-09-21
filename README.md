@@ -84,7 +84,7 @@ GPU: NVIDIA GeForce RTX 3090
 * Raw HPA images (pseudo labels on kidney and large intestine images)
 * Raw Single HuBMAP test image (pseudo labels on single spleen image)
 * Raw HuBMAP Colonic Crypt Dataset
-* GTEx (pseudo labels on spleen and prostate images) 
+* GTEx WSI Slices(pseudo labels on spleen and prostate images) 
   * Samples with no abnormalities are selected and downloaded from the platform
   * Slices are extracted using QuPath with appropriate pixel size and saved as jpeg files with ImageJ
   * Pseudo labels are generated on slices
